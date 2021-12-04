@@ -89,3 +89,28 @@ Here's how I'm going to bootstrap my cluster:
 ✔ all components are healthy
 
 ```
+One of the CRDs that gets added with flux is kustomize.  We can verify that things are good so far by checking if any kustomizations exist.
+```shell
+❯ k get ks -n flux-system
+NAME          READY   STATUS                                                                   AGE
+flux-system   True    Applied revision: development/833451eac2d2ef566ea0c9a7f5906ab14b0a11fc   6m38s
+```
+When flux sets things up it puts them in the flux-system namespace. When we look at that namespace for kustomizations with that command we see that one got applied. Great, it's not much yet, but it's a start.
+
+By the way, the flux command line can get information like this too.  Check it out:
+```shell
+❯ flux get kustomizations
+NAME       	READY	MESSAGE                                                               	REVISION                                            	SUSPENDED 
+flux-system	True 	Applied revision: development/833451eac2d2ef566ea0c9a7f5906ab14b0a11fc	development/833451eac2d2ef566ea0c9a7f5906ab14b0a11fc	False  
+```
+
+A bit more about what happened with the bootstrap command. Have a look at the repo you should see that the path used in the bootstrap command has been built out.
+```shell
+❯ tree ops
+ops
+└── flux-system
+    ├── gotk-components.yaml
+    ├── gotk-sync.yaml
+    └── kustomization.yaml
+```
+These files will govern how we add/maintain the functionality we add to the cluster with a minimum of fuss. 
