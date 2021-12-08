@@ -232,5 +232,44 @@ Events:
   ❯ k get helmRepositories -A
   NAMESPACE     NAME      URL                          READY   STATUS                                                                               AGE
 flux-system   strimzi   https://strimzi.io/charts/   True    Fetched revision: fe5f69ab3ee9d0810754153212089610d7f136a2a77c00f0784fde74c38e8736   2m28s
+```
+Now, it knows where to look. Let's give it something to look for.  I did the same thing we did with the repos directory for the releases directory.  Adding *./flux-system/releases-sync.yaml* and updating *./flux-system/kustomization.yaml*.
+
+The *./releases/strimzi-kafka-operator* directory holds the files that define making the namespace, the helm chart install, and the kustomization that keeps an eye on that helm chart definition.
+
+After checking all of that in, flux deploys all that for us.
+```shell
+❯ kgea
+NAMESPACE     LAST SEEN   TYPE     REASON   OBJECT                                 MESSAGE
+flux-system   68s       Normal   info     kustomization/releases                 Namespace/queuing configured
+HelmRelease/flux-system/kafka-operator configured
+Kustomization/flux-system/kafka-operator configured
+flux-system   67s         Normal   info                gitrepository/flux-system                       Fetched revision: development/2d4e927fe90b0227a089624228e9a80998c8b132
+flux-system   67s         Normal   info                kustomization/repos                             Reconciliation finished in 112.25794ms, next run in 10m0s
+flux-system   67s         Normal   info                kustomization/kafka-operator                    Reconciliation finished in 186.166124ms, next run in 10m0s
+flux-system   67s         Normal   info                kustomization/releases                          HelmRelease/flux-system/kafka-operator configured
+flux-system   67s         Normal   info                kustomization/releases                          Reconciliation finished in 97.338797ms, next run in 10m0s
+flux-system   66s         Normal   info                kustomization/flux-system                       Reconciliation finished in 568.4968ms, next run in 10m0s
+flux-system   66s         Normal   info                helmrelease/kafka-operator                      Helm install has started
+flux-system   66s         Normal   info                helmchart/flux-system-kafka-operator            Pulled 'strimzi-kafka-operator' chart with version '0.26.0'.
+queuing       65s         Normal   SuccessfulCreate    replicaset/strimzi-cluster-operator-76f95f787   Created pod: strimzi-cluster-operator-76f95f787-hrdrn
+queuing       65s         Normal   Scheduled           pod/strimzi-cluster-operator-76f95f787-hrdrn    Successfully assigned queuing/strimzi-cluster-operator-76f95f787-hrdrn to kind-worker3
+queuing       65s         Normal   ScalingReplicaSet   deployment/strimzi-cluster-operator             Scaled up replica set strimzi-cluster-operator-76f95f787 to 1
+queuing       64s         Normal   Pulling             pod/strimzi-cluster-operator-76f95f787-hrdrn    Pulling image "quay.io/strimzi/operator:0.26.0"
+queuing       22s         Normal   Pulled              pod/strimzi-cluster-operator-76f95f787-hrdrn    Successfully pulled image "quay.io/strimzi/operator:0.26.0" in 41.915345909s
+queuing       22s         Normal   Created             pod/strimzi-cluster-operator-76f95f787-hrdrn    Created container strimzi-cluster-operator
+queuing       21s         Normal   Started             pod/strimzi-cluster-operator-76f95f787-hrdrn    Started container strimzi-cluster-operator
+flux-system   2s          Normal   info                helmrelease/kafka-operator                      Helm install succeeded
+
+❯ kga -n queuing
+NAME                                           READY   STATUS    RESTARTS   AGE
+pod/strimzi-cluster-operator-76f95f787-hrdrn   1/1     Running   0          19m
+
+NAME                                       READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/strimzi-cluster-operator   1/1     1            1           19m
+
+NAME                                                 DESIRED   CURRENT   READY   AGE
+replicaset.apps/strimzi-cluster-operator-76f95f787   1         1         1       19m
 
 ```
+
