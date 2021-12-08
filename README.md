@@ -143,7 +143,16 @@ spec:
     name: flux-system
   validation: client
 ```
-This introduces a new subdirectory into our repository ./repos. That directory will get checked for repository definition yaml.  And, let's give it a definition to look at.
+This introduces a new subdirectory into our repository ./repos. That directory will get checked for repository definition yaml.  Update *./ops/kustomization.yaml* to add the file to it's resources.
+```yaml
+...
+resources:
+- gotk-components.yaml
+- gotk-sync.yaml
+- repos-sync.yaml
+```
+
+And, let's give it a definition to look at.
 
 *./repos/strimzi.yaml*
 ```yaml
@@ -156,4 +165,72 @@ namespace: flux-system
 spec:
 interval: 10m0s
 url: https://strimzi.io/charts/
+```
+Once that is all checked into source control.  You'll see the new kustomization for "repos" get created by describing the kustomizations.
+```yaml
+❯ k get ks -n flux-system
+  NAME          READY   STATUS                                                                   AGE
+flux-system   True    Applied revision: development/e2531334fc795e3ede86817993838706bd100ece   3d20h
+repos         True    Applied revision: development/e2531334fc795e3ede86817993838706bd100ece   2m5s
+
+❯ k describe ks -n flux-system
+Name:         flux-system
+Namespace:    flux-system
+Labels:       kustomize.toolkit.fluxcd.io/name=flux-system
+              kustomize.toolkit.fluxcd.io/namespace=flux-system
+...
+Status:
+  Conditions:
+    Last Transition Time:  2021-12-08T00:50:18Z
+    Message:               Applied revision: development/e2531334fc795e3ede86817993838706bd100ece
+    Reason:                ReconciliationSucceeded
+    Status:                True
+    Type:                  Ready
+  Inventory:
+    Entries:
+      Id:                   _alerts.notification.toolkit.fluxcd.io_apiextensions.k8s.io_CustomResourceDefinition
+      V:                    v1
+      ...
+      Id:                   flux-system_flux-system_source.toolkit.fluxcd.io_GitRepository
+      V:                    v1beta1
+  Last Applied Revision:    development/e2531334fc795e3ede86817993838706bd100ece
+  Last Attempted Revision:  development/e2531334fc795e3ede86817993838706bd100ece
+  Observed Generation:      1
+Events:
+  Type    Reason  Age    From                  Message
+  ----    ------  ----   ----                  -------
+  Normal  info    8m30s  kustomize-controller  Reconciliation finished in 395.845917ms, next run in 10m0s
+  Normal  info    4m49s  kustomize-controller  Reconciliation finished in 430.769842ms, next run in 10m0s
+  Normal  info    84s    kustomize-controller  Kustomization/flux-system/repos created
+  Normal  info    84s    kustomize-controller  Reconciliation finished in 400.801338ms, next run in 10m0s
+
+Name:         repos
+Namespace:    flux-system
+Labels:       kustomize.toolkit.fluxcd.io/name=flux-system
+              kustomize.toolkit.fluxcd.io/namespace=flux-system
+...
+Status:
+  Conditions:
+    Last Transition Time:  2021-12-08T00:50:18Z
+    Message:               Applied revision: development/e2531334fc795e3ede86817993838706bd100ece
+    Reason:                ReconciliationSucceeded
+    Status:                True
+    Type:                  Ready
+  Inventory:
+    Entries:
+      Id:                   flux-system_strimzi_source.toolkit.fluxcd.io_HelmRepository
+      V:                    v1beta1
+  Last Applied Revision:    development/e2531334fc795e3ede86817993838706bd100ece
+  Last Attempted Revision:  development/e2531334fc795e3ede86817993838706bd100ece
+  Observed Generation:      1
+Events:
+  Type    Reason  Age   From                  Message
+  ----    ------  ----  ----                  -------
+  Normal  info    84s   kustomize-controller  HelmRepository/flux-system/strimzi created
+  Normal  info    84s   kustomize-controller  Reconciliation finished in 37.122392ms, next run in 10m0s
+  
+  ❯ k get helmRepositories -A
+  NAMESPACE     NAME      URL                          READY   STATUS                                                                               AGE
+flux-system   strimzi   https://strimzi.io/charts/   True    Fetched revision: fe5f69ab3ee9d0810754153212089610d7f136a2a77c00f0784fde74c38e8736   2m28s
+
 ```
