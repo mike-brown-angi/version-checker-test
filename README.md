@@ -1,4 +1,9 @@
 # DigitalOceanChallenge2021
+Challenge objective:
+**Deploy a scalable message queue**
+
+"A critical component of all the scalable architectures are message queues used to store and distribute messages to multiple parties and introduce buffering. Kafka is widely used in this space and there are multiple operators like Strimzi or to deploy it. For this project, use a sample app to demonstrate how your message queue works."
+
 To start this challenge, we need a kubernetes cluster.  I always start out designing on a kind cluster, so let's do that.
 ```shell
 ❯ kind create cluster --config=./cluster.yaml
@@ -27,7 +32,7 @@ kind-worker3         Ready    <none>                 15m   v1.21.1
 ```
 With a cluster up and running, having something that will coordinate all the deployments and charts we'll want for this would be helpful.  Let's use flux for that.
 
-Flux, https://fluxcd.io/, has a whole bunch of functionality that you can explore.  We're just going to use it here to keep the service management sane in this example. 
+Flux, https://fluxcd.io/, has a whole bunch of functionality that you can explore.  We're just going to use it here to keep the resource management sane in this example. 
 
 The requirements for flux are pretty straight forward.  You need:
 * a github or gitlab repo of your own (it will use the repo to keep track of the config). I'm using the repo where this README lives as mine. You could fork this one if you like, or just point at an empty one you create. Either would work.
@@ -114,3 +119,41 @@ ops
     └── kustomization.yaml
 ```
 These files will govern how we add/maintain the functionality we add to the cluster with a minimum of fuss. 
+
+With flux all set up, let's give it something to do.  We set out on this challenge to get an example app that touches kafka.  Getting Kafka installed seems like a good place to start.
+
+We're going to use a helm chart to install the Strimzi operator and that's what we will convince to set up kafka for us.
+
+Flux is going to handle those pieces for us. For that to happen, we need to tell flux about where the helm chart (and any others we might need) lives.  Let's create a kustomization in the flux-system directory telling flux to look for helm repositories.
+
+*flux-system/repo-sync.yaml*
+```yaml
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1beta1
+kind: Kustomization
+metadata:
+  name: repos
+  namespace: flux-system
+spec:
+  interval: 10m0s
+  path: ./repos
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  validation: client
+```
+This introduces a new subdirectory into our repository ./repos. That directory will get checked for repository definition yaml.  And, let's give it a definition to look at.
+
+*./repos/strimzi.yaml*
+```yaml
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta1
+kind: HelmRepository
+metadata:
+name: strimzi
+namespace: flux-system
+spec:
+interval: 10m0s
+url: https://strimzi.io/charts/
+```
