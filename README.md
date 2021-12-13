@@ -272,4 +272,60 @@ NAME                                                 DESIRED   CURRENT   READY  
 replicaset.apps/strimzi-cluster-operator-76f95f787   1         1         1       19m
 
 ```
+So, with the kafka operator all set up, we just need to tell it what we want it to do.  For this example I just slightly changed (as in, changed the cluster name and namespace) the single node ephemeral example used by the official release, https://github.com/strimzi/strimzi-kafka-operator/blob/main/examples/kafka/kafka-ephemeral-single.yaml . We wouldn't want to use something like this for a prod environment, but for developing our sample app this will do just fine.
+In the ./releases/kafka-cluster directory I created a kustomization that takes the definition for that kafka cluster and applies it. The setup is about the same generally as the kafka-operator. Points to note here though, for kafka-cluster we're not using a helm deploy (see kafka.yaml) and we have this kustomization (ks.yaml) being dependent on the operator.  After adding the kafka-cluster/* files and getting the repo updated, flux reconciles things and we soon have a kafka instance to play with.
+```shell
+❯ kga -n queuing
+NAME                                           READY   STATUS    RESTARTS   AGE
+pod/kafka-entity-operator-5c489ddf46-dgw2f     3/3     Running   0          29m
+pod/kafka-kafka-0                              1/1     Running   0          29m
+pod/kafka-zookeeper-0                          1/1     Running   0          31m
+pod/kafka-zookeeper-1                          1/1     Running   0          31m
+pod/kafka-zookeeper-2                          1/1     Running   2          31m
+pod/strimzi-cluster-operator-76f95f787-hrdrn   1/1     Running   0          5d1h
 
+NAME                             TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)                               AGE
+service/kafka-kafka-bootstrap    ClusterIP   10.96.157.72   <none>        9091/TCP,9092/TCP,9093/TCP            29m
+service/kafka-kafka-brokers      ClusterIP   None           <none>        9090/TCP,9091/TCP,9092/TCP,9093/TCP   29m
+service/kafka-zookeeper-client   ClusterIP   10.96.42.93    <none>        2181/TCP                              31m
+service/kafka-zookeeper-nodes    ClusterIP   None           <none>        2181/TCP,2888/TCP,3888/TCP            31m
+
+NAME                                       READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/kafka-entity-operator      1/1     1            1           29m
+deployment.apps/strimzi-cluster-operator   1/1     1            1           5d1h
+
+NAME                                                 DESIRED   CURRENT   READY   AGE
+replicaset.apps/kafka-entity-operator-5c489ddf46     1         1         1       29m
+replicaset.apps/strimzi-cluster-operator-76f95f787   1         1         1       5d1h
+
+NAME                               READY   AGE
+statefulset.apps/kafka-kafka       1/1     29m
+statefulset.apps/kafka-zookeeper   3/3     31m
+
+```
+Yay!  Let's test it out quick for a smoke test.  We'll spin up a producer pod to put some messages out there, then create a consumer. With some luck there will be no surprises.
+```shell
+❯ kubectl -n queuing run kafka-producer -ti --image=quay.io/strimzi/kafka:0.26.0-kafka-3.0.0 --rm=true --restart=Never -- bin/kafka-console-producer.sh --broker-list kafka-kafka-bootstrap:9092 --topic manual-add-topic
+If you don't see a command prompt, try pressing enter.
+>
+[2021-12-13 03:59:42,757] WARN [Producer clientId=console-producer] Error while fetching metadata with correlation id 3 : {manual-add-topic=LEADER_NOT_AVAILABLE} (org.apache.kafka.clients.NetworkClient)
+[2021-12-13 03:59:42,858] WARN [Producer clientId=console-producer] Error while fetching metadata with correlation id 4 : {manual-add-topic=LEADER_NOT_AVAILABLE} (org.apache.kafka.clients.NetworkClient)
+>test
+>this is only a test
+>repeat this is only a test
+>^C pod "kafka-producer" deleted
+pod queuing/kafka-producer terminated (Error)
+
+❯ kubectl -n queuing run kafka-consumer -ti --image=quay.io/strimzi/kafka:0.26.0-kafka-3.0.0 --rm=true --restart=Never -- bin/kafka-console-consumer.sh --bootstrap-server kafka-kafka-bootstrap:9092 --topic manual-add-topic --from-beginning
+If you don't see a command prompt, try pressing enter.
+
+
+test
+this is only a test
+repeat this is only a test
+^CProcessed a total of 4 messages
+pod "kafka-consumer" deleted
+pod queuing/kafka-consumer terminated (Error)
+
+```
+Nice. Okay, so at this point we have all the infrastructure we need to write our own producer and consumer services in place and we've kicked the tires on it a bit. 
