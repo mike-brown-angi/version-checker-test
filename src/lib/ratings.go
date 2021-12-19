@@ -90,8 +90,8 @@ var ratingValues = []int{
 	2,  // Liked
 }
 
-
-func genRatings() (ratings []string) {
+// GenRatings - export this function
+func GenRatings() (ratings []string) {
 	rand.Seed(time.Now().Unix()) // initialize global pseudo random generator
 	for n := 0; n < 20 ; n++ {
 		// randomly select a title, two voices, and a rating
