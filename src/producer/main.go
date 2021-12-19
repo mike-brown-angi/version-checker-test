@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/gorilla/mux"
-	plib "github.com/mdbdba/DigitalOceanChallenge2021/src/lib"
+	"github.com/mdbdba/DigitalOceanChallenge2021/src/lib"
 	"net/http"
 )
 /*
@@ -139,7 +139,7 @@ func home(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
 	fmt.Fprint(w, "<body><h1>Voice Simulation Ratings</h1><table>")
 	fmt.Fprint(w, "<tr><th>Battle</th><th>Voice 1</th><th>Voice 2</th><th>Rating</th></tr>")
-	for _, line := range plib.GetRankings() {
+	for _, line := range lib.GetRankings() {
 		fmt.Fprintf(w, "%s\n", line)
 	}
 	fmt.Fprint(w, "</table></body>")
