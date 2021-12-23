@@ -328,4 +328,22 @@ pod "kafka-consumer" deleted
 pod queuing/kafka-consumer terminated (Error)
 
 ```
-Nice. Okay, so at this point we have all the infrastructure we need to write our own producer and consumer services in place and we've kicked the tires on it a bit. 
+Nice. Okay, so at this point we have all the infrastructure we need to write our own producer and consumer services in place, and we've kicked the tires on it a bit. 
+
+Our company, Conglombo Corp Limited, has a research team working on text to voice simulation.  They are currently testing the cadence and dexterity of their voices by having them perform various Epic Rap Battles of History. Researchers are watching the performances and rating them accordingly.  The ratings are being placed in a kafka topic. Our goal is to take topics off of the queue and do some simple analysis of the data from the topic. 
+
+Now, have a look in the src subdirectory.  In src/producer is a web service that simulates the researchers making ratings.  Hit the endpoint (or refresh the page) and it generates a number of ratings. The ratings are placed in kafka and await the consumer.   
+
+The consumer pulls a number of ratings off the topic, crunches them up and shows the total rating values for the simulated voices.   
+
+The game to be played there is to refresh the producer service, and once it's done refreshing, do the same for the consumer service, and notice that the rating values increase.
+
+A couple of notes if you were to try running the code locally.  To interact with kafka running in a cluster you'll need to make a way to get at it.  Do that by forwarding a port from the kafka bootstrap to localhost like this
+```shell
+❯ k port-forward -n queuing service/kafka-kafka-bootstrap 9092:9092
+```
+That will allow your producer or consumer to get at the kafka service, but there's one more step.  When a client talks with kafka it reports back the pod information to connect to.  Which, when you're outside the cluster presents a problem.  I got over that by adding the address the client complained about to my /etc/hosts file.  Like this:
+```shell
+❯ cat /etc/hosts
+127.0.0.1	localhost kafka-kafka-0.kafka-kafka-brokers.queuing.svc
+```
