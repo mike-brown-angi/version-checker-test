@@ -72,7 +72,8 @@ var battles = []string {
 	"The Joker vs Pennywise",
 	"Wolverine vs Freddy Krueger"}
 
-var voices = []string{
+// Voices export voices
+var Voices = []string{
 	"Darth Vader",
 	"Macho Man",
 	"Stephen Hawking",
@@ -91,37 +92,44 @@ var ratingValues = []int{
 }
 
 // GenRatings - export this function
-func GenRatings() (ratings []string) {
+func GenRatings() ([]string, []string) {
+	var ratings []string
+	var ratingsHtml []string
 	rand.Seed(time.Now().Unix()) // initialize global pseudo random generator
 	for n := 0; n < 20 ; n++ {
 		// randomly select a title, two voices, and a rating
 		message := fmt.Sprintf("<tr><td>%s</td>", battles[rand.Intn(len(battles))])
-		tVoice1 := voices[rand.Intn(len(voices))]
+		hmsg := fmt.Sprintf("%s|", battles[rand.Intn(len(battles))])
+		tVoice1 := Voices[rand.Intn(len(Voices))]
 		message = fmt.Sprintf("%s<td>%s</td>", message, tVoice1)
-		tVoice2 := voices[rand.Intn(len(voices))]
+		hmsg = fmt.Sprintf("%s%s|", hmsg, tVoice1)
+		tVoice2 := Voices[rand.Intn(len(Voices))]
 		if tVoice1 == tVoice2 { //try again
-			choice := rand.Intn(len(voices))
-			tVoice2 = voices[choice]
+			choice := rand.Intn(len(Voices))
+			tVoice2 = Voices[choice]
 			if tVoice1 == tVoice2 {
 				if rand.Intn(100) < 50 {
 					if choice == 0 {
-						choice = len(voices) -1
+						choice = len(Voices) -1
 					} else {
 						choice -= 1
 					}
 				} else {
-					if choice == len(voices) -1 {
+					if choice == len(Voices) -1 {
 						choice = 0
 					} else {
 						choice +=1
 					}
 				}
-				tVoice2 = voices[choice]
+				tVoice2 = Voices[choice]
 			}
 		}
-		message = fmt.Sprintf("%s<td>%s</td><td>%d</td><tr>", message, tVoice2,
-			ratingValues[rand.Intn(len(ratingValues))])
+		rVal := ratingValues[rand.Intn(len(ratingValues))]
+		message = fmt.Sprintf("%s<td>%s</td><td>%d</td><tr>", message, tVoice2, rVal)
+		hmsg = fmt.Sprintf("%s%s|%d", hmsg, tVoice2, rVal)
+		//fmt.Println(message)
 		ratings = append(ratings, message)
+		ratingsHtml = append(ratingsHtml, hmsg)
 	}
-	return
+	return ratings, ratingsHtml
 }
