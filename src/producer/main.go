@@ -28,16 +28,22 @@ func main() {
 	}
 }
 
+func closeProducer(w *kafka.Writer) {
+	err := w.Close()
+	if err != nil {
+		panic(err)
+	}
+}
 func produce(ctx context.Context, ratings []string) {
 
 	l := log.New(os.Stdout, "kafka writer: ", 0)
-	// intialize the writer with the broker addresses, and the topic
+	// initialize the writer with the broker addresses, and the topic
 	w := kafka.NewWriter(kafka.WriterConfig{
 		Brokers: []string{brokerAddress},
 		Topic:   topic,
-		// assign the logger to the writer
 		Logger: l,
 	})
+    defer closeProducer(w)
 
 	for i := 0; i < len(ratings); i++ {
 		// each kafka message has a key and value. The key is used
@@ -55,10 +61,6 @@ func produce(ctx context.Context, ratings []string) {
 		fmt.Println("writes:", i)
 		// sleep for a second
 		time.Sleep(1 * time.Millisecond)
-	}
-	err := w.Close()
-	if err != nil {
-		return
 	}
 }
 

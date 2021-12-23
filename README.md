@@ -1,9 +1,22 @@
 # DigitalOceanChallenge2021
-Challenge objective:
-**Deploy a scalable message queue**
+## Part 1: Overview ##
+Challenge objective: **Deploy a scalable message queue**
 
 "A critical component of all the scalable architectures are message queues used to store and distribute messages to multiple parties and introduce buffering. Kafka is widely used in this space and there are multiple operators like Strimzi or to deploy it. For this project, use a sample app to demonstrate how your message queue works."
 
+Everything is more fun when there's a story attached to it, so here's ours for this project:
+
+
+Our company, Conglombo Corp Limited, has a research team working on text to voice simulation.  They are currently testing the cadence and dexterity of their voices by having them perform various Epic Rap Battles of History. Researchers are watching the performances and rating them accordingly.  The ratings are being placed in a kafka topic. Our goal is to take topics off of the queue and do some simple analysis of the data from the topic.
+
+The demo will consist of a couple of web services. One will pretend to be the researchers, putting ratings onto a kafka topic. The other will pull ratings out of the topic and sum up the ratings for the performances of each of the voices.
+For the first parts of this we will be developing locally using:
+* a [kind cluster](https://kind.sigs.k8s.io/) for our kubernetes cluster
+* [fluxcd](https://github.com/fluxcd/flux2) to make setting up and maintaining the services we put in k8s easier.
+* [helm](https://helm.sh/) is a nice wrapper for describing deployments to k8s and easier for humans to read.
+* the [strimzi kafka operator helm chart](https://strimzi.io/documentation/)
+
+## Part 2: Kind Cluster and GitOps Setup ##
 To start this challenge, we need a kubernetes cluster.  I always start out designing on a kind cluster, so let's do that.
 ```shell
 ❯ kind create cluster --config=./cluster.yaml
@@ -120,11 +133,12 @@ ops
 ```
 These files will govern how we add/maintain the functionality we add to the cluster with a minimum of fuss. 
 
+## Part 3: Add Kafka using GitOps ##
 With flux all set up, let's give it something to do.  We set out on this challenge to get an example app that touches kafka.  Getting Kafka installed seems like a good place to start.
 
-We're going to use a helm chart to install the Strimzi operator and that's what we will convince to set up kafka for us.
+Getting Kafka set up at a high level will be a two step process.  The first step is that we're going to set up an operator to handle the complicated bits around setting up Kafka. Then, for step two, we are going to convince the operator to create a Kafka instance for us. For each of the steps, We're going to be using helm charts.
 
-Flux is going to handle those pieces for us. For that to happen, we need to tell flux about where the helm chart (and any others we might need) lives.  Let's create a kustomization in the flux-system directory telling flux to look for helm repositories.
+Making things even easier, Flux is going to handle those pieces for us. For that to happen, we need to tell flux about where the helm charts (and any others we might need) live.  Let's create a kustomization in the flux-system directory telling flux to look for helm repositories.
 
 *flux-system/repo-sync.yaml*
 ```yaml
@@ -143,7 +157,7 @@ spec:
     name: flux-system
   validation: client
 ```
-This introduces a new subdirectory into our repository ./repos. That directory will get checked for repository definition yaml.  Update *./ops/kustomization.yaml* to add the file to it's resources.
+This introduces a new subdirectory into our repository ./repos. That directory will get checked for repository definition yaml.  Update *./ops/kustomization.yaml* to add the file to its resources.
 ```yaml
 ...
 resources:
@@ -152,7 +166,7 @@ resources:
 - repos-sync.yaml
 ```
 
-And, let's give it a definition to look at.
+And, let's give it a definition to look at. The following describes in yaml where to look for the Strimzi helm charts.
 
 *./repos/strimzi.yaml*
 ```yaml
@@ -166,7 +180,7 @@ spec:
 interval: 10m0s
 url: https://strimzi.io/charts/
 ```
-Once that is all checked into source control.  You'll see the new kustomization for "repos" get created by describing the kustomizations.
+Once that is all checked into source control.  You'll see the new kustomization for "repos" got created. Do that by describing the k8s kustomizations.
 ```yaml
 ❯ k get ks -n flux-system
   NAME          READY   STATUS                                                                   AGE
@@ -336,7 +350,11 @@ Now, have a look in the src subdirectory.  In src/producer is a web service that
 
 The consumer pulls a number of ratings off the topic, crunches them up and shows the total rating values for the simulated voices.   
 
-The game to be played there is to refresh the producer service, and once it's done refreshing, do the same for the consumer service, and notice that the rating values increase.
+The game to be played there is to refresh the producer service, and once it's done refreshing, do the same for the consumer service, and notice that the rating values increase. The producer will look like this:
+![Producer](doc/img/producer.png)
+And, the consumer will look something like this:
+![Consumer](doc/img/consumer.png)
+As you can see in my ratings data, Joan of Arc has the highest sum of ratings.  Hope your favorite voice is at the top of your list!
 
 A couple of notes if you were to try running the code locally.  To interact with kafka running in a cluster you'll need to make a way to get at it.  Do that by forwarding a port from the kafka bootstrap to localhost like this
 ```shell

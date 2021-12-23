@@ -46,7 +46,6 @@ var battles = []string {
 	"Zeus vs Thor",
 	"Jack The Ripper vs Hannibal Lecter",
 	"Steven Spielberg vs Alfred Hitchcock",
-	"Lewis And Clark vs Bill And Ted",
 	"David Copperfield vs Harry Houdini",
 	"Terminator vs Robocop",
 	"Shaka Zulu vs Julius Caesar",
@@ -125,7 +124,8 @@ func GenRatings() ([]string, []string) {
 			}
 		}
 		rVal := ratingValues[rand.Intn(len(ratingValues))]
-		message = fmt.Sprintf("%s<td>%s</td><td>%d</td><tr>", message, tVoice2, rVal)
+		message = fmt.Sprintf("%s<td>%s</td><td>%d</td><tr>",
+			message, tVoice2, rVal)
 		hmsg = fmt.Sprintf("%s%s|%d", hmsg, tVoice2, rVal)
 		//fmt.Println(message)
 		ratings = append(ratings, message)

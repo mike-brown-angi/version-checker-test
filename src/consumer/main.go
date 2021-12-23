@@ -30,6 +30,13 @@ func main() {
 	}
 }
 
+func closeConsumer(r *kafka.Reader) {
+	err := r.Close()
+	if err != nil {
+		panic(err)
+	}
+}
+
 func consume(ctx context.Context) {
 	// create a new logger that outputs to stdout
 	// and has the `kafka reader` prefix
@@ -44,20 +51,17 @@ func consume(ctx context.Context) {
 		// assign the logger to the reader
 		Logger: l,
 	})
+	defer closeConsumer(r)
+
 	for k := 0; k<20 ; k++ {
 		// the `ReadMessage` method blocks until we receive the next event
 		msg, err := r.ReadMessage(ctx)
 		if err != nil {
-			// panic("could not read message " + err.Error())
 			break
 		}
 		l.Printf("%d %s\n", k, string(msg.Value))
 		// after receiving the message, log its value
 		ratings = append(ratings, string(msg.Value))
-	}
-	err := r.Close()
-	if err != nil {
-		return 
 	}
 }
 
