@@ -1,0 +1,16 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: kconsumer
+  namespace: flux-system
+spec:
+  targetNamespace: appdev
+  chart:
+    spec:
+      chart: kconsumer
+      sourceRef:
+        kind: HelmRepository
+        name: mdbdba
+  interval: 10m0s
+
