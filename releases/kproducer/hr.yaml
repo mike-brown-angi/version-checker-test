@@ -1,0 +1,16 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: kproducer
+  namespace: flux-system
+spec:
+  targetNamespace: appdev
+  chart:
+    spec:
+      chart: kproducer
+      sourceRef:
+        kind: HelmRepository
+        name: mdbdba
+  interval: 10m0s
+

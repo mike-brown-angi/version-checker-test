@@ -539,5 +539,6 @@ b2d5eeeaba3a: Layer already exists
 v0.1: digest: sha256:a1ece941effdb804b41e43b812cb63751ac407add8093f7c82d108faef9f12b5 size: 949
 ```
 
-## Part 7: ##
+## Part 7: Deploying the Example Services ##
+
 
