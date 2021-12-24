@@ -23,6 +23,7 @@ func main() {
 	r := mux.NewRouter()
 	r.NotFoundHandler = h
 	r.HandleFunc("/", home)
+	r.HandleFunc("/health", health)
 	err := http.ListenAndServe(":3001", r)
 	if err != nil {
 		return
@@ -86,6 +87,14 @@ func home(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Fprintf(w, "\n")
 	return
+}
+
+func health(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	_, err := w.Write([]byte(fmt.Sprintf("[{\"response\": %d}]", http.StatusOK)))
+	if err != nil {
+		return
+	}
 }
 
 func notfound(w http.ResponseWriter, r *http.Request) {
