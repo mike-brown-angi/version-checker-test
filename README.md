@@ -11,10 +11,11 @@ Our company, Conglombo Corp Limited, has a research team working on text to voic
 
 The demo will consist of a couple of web services. One will pretend to be the researchers, putting ratings onto a kafka topic. The other will pull ratings out of the topic and sum up the ratings for the performances of each of the voices.
 For the first parts of this we will be developing locally using:
+* [docker](https://www.docker.com/) because all the pieces of this project will be containerized, and I'm going to use a dockerhub account as a repository for the consumer and producer images.
 * a [kind cluster](https://kind.sigs.k8s.io/) for our kubernetes cluster
 * [fluxcd](https://github.com/fluxcd/flux2) to make setting up and maintaining the services we put in k8s easier.
 * [helm](https://helm.sh/) is a nice wrapper for describing deployments to k8s and easier for humans to read.
-* the [strimzi kafka operator helm chart](https://strimzi.io/documentation/)
+* the [strimzi kafka operator helm chart](https://strimzi.io/documentation/) because it's an easy way for us to get a workable message queue in place.
 
 ## Part 2: Kind Cluster and GitOps Setup ##
 To start this challenge, we need a kubernetes cluster.  I always start out designing on a kind cluster, so let's do that.
@@ -45,7 +46,7 @@ kind-worker3         Ready    <none>                 15m   v1.21.1
 ```
 With a cluster up and running, having something that will coordinate all the deployments and charts we'll want for this would be helpful.  Let's use flux for that.
 
-Flux, https://fluxcd.io/, has a whole bunch of functionality that you can explore.  We're just going to use it here to keep the resource management sane in this example. 
+Flux, https://fluxcd.io/, has a bunch of functionality that you can explore.  We're just going to use it here to keep the resource management sane in this example. 
 
 The requirements for flux are pretty straight forward.  You need:
 * a github or gitlab repo of your own (it will use the repo to keep track of the config). I'm using the repo where this README lives as mine. You could fork this one if you like, or just point at an empty one you create. Either would work.
@@ -136,7 +137,7 @@ These files will govern how we add/maintain the functionality we add to the clus
 ## Part 3: Add Kafka using GitOps ##
 With flux all set up, let's give it something to do.  We set out on this challenge to get an example app that touches kafka.  Getting Kafka installed seems like a good place to start.
 
-Getting Kafka set up at a high level will be a two step process.  The first step is that we're going to set up an operator to handle the complicated bits around setting up Kafka. Then, for step two, we are going to convince the operator to create a Kafka instance for us. For each of the steps, We're going to be using helm charts.
+Getting Kafka set up at a high level will be a two-step process.  The first step is that we're going to set up an operator to handle the complicated bits around setting up Kafka. Then, for step two, we are going to convince the operator to create a Kafka instance for us. For each of the steps, We're going to be using helm charts.
 
 Making things even easier, Flux is going to handle those pieces for us. For that to happen, we need to tell flux about where the helm charts (and any others we might need) live.  Let's create a kustomization in the flux-system directory telling flux to look for helm repositories.
 
@@ -317,6 +318,7 @@ statefulset.apps/kafka-kafka       1/1     29m
 statefulset.apps/kafka-zookeeper   3/3     31m
 
 ```
+## Part 4: Testing Kafka ##
 Yay!  Let's test it out quick for a smoke test.  We'll spin up a producer pod to put some messages out there, then create a consumer. With some luck there will be no surprises.
 ```shell
 ❯ kubectl -n queuing run kafka-producer -ti --image=quay.io/strimzi/kafka:0.26.0-kafka-3.0.0 --rm=true --restart=Never -- bin/kafka-console-producer.sh --broker-list kafka-kafka-bootstrap:9092 --topic manual-add-topic
@@ -342,13 +344,15 @@ pod "kafka-consumer" deleted
 pod queuing/kafka-consumer terminated (Error)
 
 ```
+
+## Part 5: Make the producer and consumer ##
 Nice. Okay, so at this point we have all the infrastructure we need to write our own producer and consumer services in place, and we've kicked the tires on it a bit. 
 
-Our company, Conglombo Corp Limited, has a research team working on text to voice simulation.  They are currently testing the cadence and dexterity of their voices by having them perform various Epic Rap Battles of History. Researchers are watching the performances and rating them accordingly.  The ratings are being placed in a kafka topic. Our goal is to take topics off of the queue and do some simple analysis of the data from the topic. 
+As mentioned in the summary, our company, Conglombo Corp Limited, has a research team working on text to voice simulation.  They are currently testing the cadence and dexterity of their voices by having them perform various Epic Rap Battles of History. Researchers are watching the performances and rating them accordingly.  The ratings are being placed in a kafka topic. Our goal is to take topics off of the queue and do some simple analysis of the data from the topic. 
 
-Now, have a look in the src subdirectory.  In src/producer is a web service that simulates the researchers making ratings.  Hit the endpoint (or refresh the page) and it generates a number of ratings. The ratings are placed in kafka and await the consumer.   
+Now, have a look in the src subdirectory.  In ./src/producer is a web service that simulates the researchers making ratings.  Hit the endpoint (or refresh the page) and it generates a number of ratings. The ratings are placed in kafka and await the consumer.   
 
-The consumer pulls a number of ratings off the topic, crunches them up and shows the total rating values for the simulated voices.   
+The consumer in ./src/consumer pulls a number of ratings off the topic, crunches them up and shows the total rating values for the simulated voices.   
 
 The game to be played there is to refresh the producer service, and once it's done refreshing, do the same for the consumer service, and notice that the rating values increase. The producer will look like this:
 ![Producer](doc/img/producer.png)
@@ -360,8 +364,180 @@ A couple of notes if you were to try running the code locally.  To interact with
 ```shell
 ❯ k port-forward -n queuing service/kafka-kafka-bootstrap 9092:9092
 ```
-That will allow your producer or consumer to get at the kafka service, but there's one more step.  When a client talks with kafka it reports back the pod information to connect to.  Which, when you're outside the cluster presents a problem.  I got over that by adding the address the client complained about to my /etc/hosts file.  Like this:
+That will allow your producer or consumer to get at the kafka service, but there's one more step.  When a client talks with kafka it reports back the pod information to connect to and expects that be used going forward.  Which, when you're outside the cluster presents a problem.  I got over that by adding the address the client complained about to my /etc/hosts file.  Like this:
 ```shell
 ❯ cat /etc/hosts
 127.0.0.1	localhost kafka-kafka-0.kafka-kafka-brokers.queuing.svc
 ```
+## Part 6: Build the images ##
+Once the services are running outside the cluster, it is time to build the services into separate docker images that we can use to deploy.
+Have a look at ./src/Dockerfile. This file can be used to build the proper image by changing this line to copy the producer or consumer main files into the image.  Also, since the consumer is using port 3001 opposed to 3000, that port needs to be exposed as well.
+```shell
+COPY ./producer/main.go .
+```
+also
+```shell
+EXPOSE 3000
+```
+
+Then doing a build that assigns a tag will set us up with two images to use.
+
+```shell
+❯ docker build --tag mdbdba/kproducer .
+Sending build context to Docker daemon  24.58kB
+Step 1/14 : FROM golang:latest as builder
+ ---> cbf5edf38f6b
+Step 2/14 : LABEL maintainer="Mike Brown <mdbdba@gmail.com>"
+ ---> Running in 0c21847edfca
+Removing intermediate container 0c21847edfca
+ ---> 36fd3034cbb0
+Step 3/14 : WORKDIR /app
+ ---> Running in 813da1d23883
+Removing intermediate container 813da1d23883
+ ---> e8b862166251
+Step 4/14 : COPY go.mod go.sum ./
+ ---> 75594bfc3d1d
+Step 5/14 : RUN go mod download
+ ---> Running in 4ad53516e0ec
+Removing intermediate container 4ad53516e0ec
+ ---> 90b2ba53a55b
+Step 6/14 : COPY . .
+ ---> 5b9aeeb7d492
+Step 7/14 : COPY ./producer/main.go .
+ ---> 0ee58bb9830c
+Step 8/14 : RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
+ ---> Running in a98290eb0f6b
+Removing intermediate container a98290eb0f6b
+ ---> a4b4a08380a9
+Step 9/14 : FROM alpine:latest
+ ---> 6dbb9cc54074
+Step 10/14 : RUN apk --no-cache add ca-certificates
+ ---> Running in f0afbeb61619
+fetch https://dl-cdn.alpinelinux.org/alpine/v3.13/main/x86_64/APKINDEX.tar.gz
+fetch https://dl-cdn.alpinelinux.org/alpine/v3.13/community/x86_64/APKINDEX.tar.gz
+(1/1) Installing ca-certificates (20191127-r5)
+Executing busybox-1.32.1-r6.trigger
+Executing ca-certificates-20191127-r5.trigger
+OK: 6 MiB in 15 packages
+Removing intermediate container f0afbeb61619
+ ---> c1262e744bdf
+Step 11/14 : WORKDIR /root/
+ ---> Running in 7925d7f3ab38
+Removing intermediate container 7925d7f3ab38
+ ---> 350f8cdc3315
+Step 12/14 : COPY --from=builder /app/main .
+ ---> 11f153c09975
+Step 13/14 : EXPOSE 3000
+ ---> Running in f54f7ebc4075
+Removing intermediate container f54f7ebc4075
+ ---> 6a7174ce8c3e
+Step 14/14 : CMD ["./main"]
+ ---> Running in 40ffab88d12e
+Removing intermediate container 40ffab88d12e
+ ---> 4275ae9f8ced
+Successfully built 4275ae9f8ced
+Successfully tagged mdbdba/kproducer:latest
+
+```
+Update ./src/Dockerfile for the consumer by changing the line to:
+```shell
+COPY ./consumer/main.go .
+```
+also
+```shell
+EXPOSE 3001
+```
+Then do the build again with a tag for the consumer
+
+```
+❯ docker build --tag mdbdba/kconsumer .
+Sending build context to Docker daemon  24.58kB
+Step 1/14 : FROM golang:latest as builder
+ ---> cbf5edf38f6b
+Step 2/14 : LABEL maintainer="Mike Brown <mdbdba@gmail.com>"
+ ---> Using cache
+ ---> 36fd3034cbb0
+Step 3/14 : WORKDIR /app
+ ---> Using cache
+ ---> e8b862166251
+Step 4/14 : COPY go.mod go.sum ./
+ ---> Using cache
+ ---> 75594bfc3d1d
+Step 5/14 : RUN go mod download
+ ---> Using cache
+ ---> 90b2ba53a55b
+Step 6/14 : COPY . .
+ ---> 657d2e01c0c2
+Step 7/14 : COPY ./consumer/main.go .
+ ---> 8f780eb0cc76
+Step 8/14 : RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
+ ---> Running in b14d939dc783
+Removing intermediate container b14d939dc783
+ ---> 65ebe86c0389
+Step 9/14 : FROM alpine:latest
+ ---> 6dbb9cc54074
+Step 10/14 : RUN apk --no-cache add ca-certificates
+ ---> Using cache
+ ---> c1262e744bdf
+Step 11/14 : WORKDIR /root/
+ ---> Using cache
+ ---> 350f8cdc3315
+Step 12/14 : COPY --from=builder /app/main .
+ ---> c4ebeda24da5
+Step 13/14 : EXPOSE 3001
+ ---> Running in 309880f84938
+Removing intermediate container 309880f84938
+ ---> c53d4f9de181
+Step 14/14 : CMD ["./main"]
+ ---> Running in 3af203b3268a
+Removing intermediate container 3af203b3268a
+ ---> 1b3b41c8c236
+Successfully built 1b3b41c8c236
+Successfully tagged mdbdba/kconsumer:latest
+
+❯ docker images
+REPOSITORY                 TAG         IMAGE ID       CREATED              SIZE
+mdbdba/kconsumer           latest      1b3b41c8c236   About a minute ago   14.3MB
+mdbdba/kproducer           latest      4275ae9f8ced   3 minutes ago        14MB
+...
+```
+Let's add a version tag to each of our images and push them to a dockerhub repo.
+```shell
+❯ docker image tag mdbdba/kproducer:latest mdbdba/kproducer:v0.1
+❯ docker image tag mdbdba/kconsumer:latest mdbdba/kconsumer:v0.1
+❯ docker images
+REPOSITORY                 TAG         IMAGE ID       CREATED         SIZE
+mdbdba/kconsumer           latest      1b3b41c8c236   5 minutes ago   14.3MB
+mdbdba/kconsumer           v0.1        1b3b41c8c236   5 minutes ago   14.3MB
+mdbdba/kproducer           latest      4275ae9f8ced   7 minutes ago   14MB
+mdbdba/kproducer           v0.1        4275ae9f8ced   7 minutes ago   14MB
+❯ docker push mdbdba/kproducer
+Using default tag: latest
+The push refers to repository [docker.io/mdbdba/kproducer]
+db06a332b0ca: Pushed 
+30b531e943eb: Pushed 
+b2d5eeeaba3a: Mounted from ... 
+latest: digest: sha256:23d98d552f34a25cf7924e244d6245ded108a987903a6f024c118f0a79cc6bc5 size: 949
+❯ docker push mdbdba/kconsumer
+Using default tag: latest
+The push refers to repository [docker.io/mdbdba/kconsumer]
+b91da662fc02: Pushed 
+30b531e943eb: Mounted from mdbdba/kproducer 
+b2d5eeeaba3a: Mounted from mdbdba/kproducer 
+latest: digest: sha256:a1ece941effdb804b41e43b812cb63751ac407add8093f7c82d108faef9f12b5 size: 949
+❯ docker push mdbdba/kproducer:v0.1
+The push refers to repository [docker.io/mdbdba/kproducer]
+db06a332b0ca: Layer already exists 
+30b531e943eb: Layer already exists 
+b2d5eeeaba3a: Layer already exists 
+v0.1: digest: sha256:23d98d552f34a25cf7924e244d6245ded108a987903a6f024c118f0a79cc6bc5 size: 949
+❯ docker push mdbdba/kconsumer:v0.1
+The push refers to repository [docker.io/mdbdba/kconsumer]
+b91da662fc02: Layer already exists 
+30b531e943eb: Layer already exists 
+b2d5eeeaba3a: Layer already exists 
+v0.1: digest: sha256:a1ece941effdb804b41e43b812cb63751ac407add8093f7c82d108faef9f12b5 size: 949
+```
+
+## Part 7: ##
+
