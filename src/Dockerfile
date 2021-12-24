@@ -14,7 +14,7 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-COPY ./consumer/main.go .
+COPY ./producer/main.go .
 
 # Build the Go app
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
@@ -31,7 +31,7 @@ WORKDIR /root/
 COPY --from=builder /app/main .
 
 # Expose port 
-EXPOSE 3001
+EXPOSE 3000
 
 # Command to run the executable
 CMD ["./main"]
