@@ -566,7 +566,7 @@ Then, browsing again to localhost:3000 and localhost:3001 will again work as it 
 Welp, at this point we've completed quite a bit here. We've created a local kubernetes cluster.  Set up GitOps so that it can simplify the services we deploy.  We've used helm charts to create a Kafka cluster and deploy both, a producer and consumer service to populate and read from that cluster.  Nice work!
 
 ## Part 8: Digital Ocean Deploy ##
-But, what if you wanted to do this in a Digital Ocean Kubernetes cluster?  Ha! You've already done all the work!  Go through the prompts for a default kubernetes cluster.  Then, when the cluster is spun up, download the config file and set it up as the file named "config" in your ~/.kube file.  Let's test it out.
+But, what if you wanted to do this in a Digital Ocean Kubernetes cluster?  Ha! You've already done all the work!  The Digital Ocean UX is terrific. Creating a cluster can be done in a handful of clicks.  Go through the prompts for a default kubernetes cluster.  Then, when the cluster is spun up, download the config file and set it up as the file named "config" in your ~/.kube file.  Let's test it out.
 
 ```shell
 ❯ k get nodes
@@ -694,3 +694,9 @@ The producer
 And the consumer
 ![Consumer](doc/img/doconsumer.png)
 
+Remember, when finishing up with the kubernetes cluster, clean up the paid resource you've used. Like with what seems like everything else associated with Digital Ocean, the way to delete the cluster is clear and straight forward. Check it out.
+![k8s Actions](doc/img/dok8sUx.png)
+
+Click that Destroy button, enter the cluster name (don't worry, it shows you it's name to copy), press enter, and it's as good as gone.
+
+Now, we really have covered a bunch of ground!  Thanks for giving this a read.  
