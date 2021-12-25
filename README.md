@@ -10,13 +10,13 @@ Everything is more fun when there's a story attached to it, so here's ours for t
 Our company, Conglombo Corp Limited, has a research team working on text to voice simulation.  They are currently testing the cadence and dexterity of their voices by having them perform various Epic Rap Battles of History. Researchers are watching the performances and rating them accordingly.  The ratings are being placed in a kafka topic. Our goal is to take topics off of the queue and do some simple analysis of the data from the topic.
 
 The demo will consist of a couple of web services. One will pretend to be the researchers, putting ratings onto a kafka topic. The other will pull ratings out of the topic and sum up the ratings for the performances of each of the voices.
-For the first parts of this we will be developing locally using:
-* [docker](https://www.docker.com/) because all the pieces of this project will be containerized, and I'm going to use a dockerhub account as a repository for the consumer and producer images.
-* a [kind cluster](https://kind.sigs.k8s.io/) for our kubernetes cluster
-* [fluxcd](https://github.com/fluxcd/flux2) to make setting up and maintaining the services we put in k8s easier.
-* [helm](https://helm.sh/) is a nice wrapper for describing deployments to k8s and easier for humans to read.
-* the [strimzi kafka operator helm chart](https://strimzi.io/documentation/) because it's an easy way for us to get a workable message queue in place.
-
+We will be developing locally and then deploying to Digital Ocean using:
+* [Docker](https://www.docker.com/) because all the pieces of this project will be containerized, and we are going to use a dockerhub account as a repository for the consumer and producer images.
+* A [kind cluster](https://kind.sigs.k8s.io/) for our kubernetes cluster
+* [Fluxcd](https://github.com/fluxcd/flux2) to make setting up and maintaining the services we put in k8s easier.
+* [Helm](https://helm.sh/) is a nice wrapper for describing deployments to k8s and easier for humans to read.
+* The [strimzi kafka operator helm chart](https://strimzi.io/documentation/) because it's an easy way for us to get a workable message queue in place.
+* Then we'll demonstrate how easy it is to migrate our setup into a [Digital Ocean]( https://cloud.digitalocean.com) kubernetes cluster!
 ## Part 2: Kind Cluster and GitOps Setup ##
 To start this challenge, we need a kubernetes cluster.  I always start out designing on a kind cluster, so let's do that.
 ```shell
