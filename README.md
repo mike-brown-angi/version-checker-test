@@ -565,4 +565,132 @@ Then, browsing again to localhost:3000 and localhost:3001 will again work as it 
 
 Welp, at this point we've completed quite a bit here. We've created a local kubernetes cluster.  Set up GitOps so that it can simplify the services we deploy.  We've used helm charts to create a Kafka cluster and deploy both, a producer and consumer service to populate and read from that cluster.  Nice work!
 
+## Part 8: Digital Ocean Deploy ##
+But, what if you wanted to do this in a Digital Ocean Kubernetes cluster?  Ha! You've already done all the work!  Go through the prompts for a default kubernetes cluster.  Then, when the cluster is spun up, download the config file and set it up as the file named "config" in your ~/.kube file.  Let's test it out.
+
+```shell
+❯ k get nodes
+NAME                   STATUS   ROLES    AGE     VERSION
+pool-8mljiam7y-uadq5   Ready    <none>   4m27s   v1.21.5
+pool-8mljiam7y-uadqk   Ready    <none>   4m14s   v1.21.5
+pool-8mljiam7y-uadqs   Ready    <none>   4m39s   v1.21.5
+```
+Then, if we use the same flux command we used originally, it spins 
+```shell
+❯ flux bootstrap github \
+  --owner=$GITHUB_USER \
+  --repository=DigitalOceanChallenge2021 \
+  --branch=development \
+  --path=./ops \
+  --personal
+► connecting to github.com
+► cloning branch "development" from Git repository "https://github.com/mdbdba/DigitalOceanChallenge2021.git"
+✔ cloned repository
+► generating component manifests
+✔ generated component manifests
+✔ component manifests are up to date
+► installing components in "flux-system" namespace
+✔ installed components
+✔ reconciled components
+► determining if source secret "flux-system/flux-system" exists
+► generating source secret
+✔ public key: ecdsa-sha2-nistp384 AAAAE2VjZHNhLXNoYTItbmlzdHAzODQAAAAIbmlzdHAzODQAAABhBINrJvO2TtZjlEgUXbK+URybHZkWZc1TtWwYZyMbcasXNFsnEVHGLIDqb7MXtwaHP5ZZ0CAtbelvbReSrfvmLj3RrRZbqv8mBD111p1z8/QIX7zNGUmT47z8nj8rrgt/4Q==
+✔ configured deploy key "flux-system-development-flux-system-./ops" for "https://github.com/mdbdba/DigitalOceanChallenge2021"
+► applying source secret "flux-system/flux-system"
+✔ reconciled source secret
+► generating sync manifests
+✔ generated sync manifests
+✔ sync manifests are up to date
+► applying sync manifests
+✔ reconciled sync configuration
+◎ waiting for Kustomization "flux-system/flux-system" to be reconciled
+✔ Kustomization reconciled successfully
+► confirming components are healthy
+✔ helm-controller: deployment ready
+✔ kustomize-controller: deployment ready
+✔ notification-controller: deployment ready
+✔ source-controller: deployment ready
+✔ all components are healthy
+
+❯ kgaa
+NAMESPACE     NAME                                            READY   STATUS    RESTARTS   AGE
+appdev        pod/appdev-kconsumer-58f6584bd7-msxjc           1/1     Running   0          72s
+appdev        pod/appdev-kproducer-5bd4c686b-cc4wn            1/1     Running   0          72s
+flux-system   pod/helm-controller-55896d6ccf-p7nss            1/1     Running   0          18m
+flux-system   pod/kustomize-controller-76795877c9-h7496       1/1     Running   0          18m
+flux-system   pod/notification-controller-7ccfbfbb98-j7csx    1/1     Running   0          18m
+flux-system   pod/source-controller-6b8d9cb5cc-brpn4          1/1     Running   0          18m
+kube-system   pod/cilium-mm2sj                                1/1     Running   0          24m
+kube-system   pod/cilium-nhxxv                                1/1     Running   0          25m
+kube-system   pod/cilium-operator-855c58cdcc-4l7wz            1/1     Running   0          27m
+kube-system   pod/cilium-wlkqs                                1/1     Running   0          24m
+kube-system   pod/coredns-85d9ccbb46-2clhr                    1/1     Running   0          27m
+kube-system   pod/coredns-85d9ccbb46-fht8p                    1/1     Running   0          27m
+kube-system   pod/csi-do-node-jhmn9                           2/2     Running   0          24m
+kube-system   pod/csi-do-node-n8f7n                           2/2     Running   0          24m
+kube-system   pod/csi-do-node-schg2                           2/2     Running   0          25m
+kube-system   pod/do-node-agent-6vqpf                         1/1     Running   0          24m
+kube-system   pod/do-node-agent-bvkbp                         1/1     Running   0          24m
+kube-system   pod/do-node-agent-kft42                         1/1     Running   0          25m
+kube-system   pod/kube-proxy-lm8pn                            1/1     Running   0          24m
+kube-system   pod/kube-proxy-wrftw                            1/1     Running   0          24m
+kube-system   pod/kube-proxy-zvjh2                            1/1     Running   0          25m
+queuing       pod/kafka-kafka-0                               1/1     Running   0          22s
+queuing       pod/kafka-zookeeper-0                           1/1     Running   0          66s
+queuing       pod/kafka-zookeeper-1                           1/1     Running   0          66s
+queuing       pod/kafka-zookeeper-2                           1/1     Running   0          66s
+queuing       pod/strimzi-cluster-operator-745cdbb6fd-hp4mz   1/1     Running   0          4m18s
+
+NAMESPACE     NAME                              TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)                               AGE
+appdev        service/appdev-kconsumer          NodePort    10.245.221.35    <none>        3001:31578/TCP                        72s
+appdev        service/appdev-kproducer          NodePort    10.245.198.161   <none>        3000:32422/TCP                        72s
+default       service/kubernetes                ClusterIP   10.245.0.1       <none>        443/TCP                               27m
+flux-system   service/notification-controller   ClusterIP   10.245.240.227   <none>        80/TCP                                18m
+flux-system   service/source-controller         ClusterIP   10.245.238.136   <none>        80/TCP                                18m
+flux-system   service/webhook-receiver          ClusterIP   10.245.51.75     <none>        80/TCP                                18m
+kube-system   service/kube-dns                  ClusterIP   10.245.0.10      <none>        53/UDP,53/TCP,9153/TCP                27m
+queuing       service/kafka-kafka-bootstrap     ClusterIP   10.245.119.25    <none>        9091/TCP,9092/TCP,9093/TCP            22s
+queuing       service/kafka-kafka-brokers       ClusterIP   None             <none>        9090/TCP,9091/TCP,9092/TCP,9093/TCP   22s
+queuing       service/kafka-zookeeper-client    ClusterIP   10.245.154.232   <none>        2181/TCP                              67s
+queuing       service/kafka-zookeeper-nodes     ClusterIP   None             <none>        2181/TCP,2888/TCP,3888/TCP            67s
+
+NAMESPACE     NAME                           DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR                 AGE
+kube-system   daemonset.apps/cilium          3         3         3       3            3           <none>                        27m
+kube-system   daemonset.apps/csi-do-node     3         3         3       3            3           <none>                        27m
+kube-system   daemonset.apps/do-node-agent   3         3         3       3            3           beta.kubernetes.io/os=linux   27m
+kube-system   daemonset.apps/kube-proxy      3         3         3       3            3           <none>                        27m
+
+NAMESPACE     NAME                                       READY   UP-TO-DATE   AVAILABLE   AGE
+appdev        deployment.apps/appdev-kconsumer           1/1     1            1           72s
+appdev        deployment.apps/appdev-kproducer           1/1     1            1           72s
+flux-system   deployment.apps/helm-controller            1/1     1            1           18m
+flux-system   deployment.apps/kustomize-controller       1/1     1            1           18m
+flux-system   deployment.apps/notification-controller    1/1     1            1           18m
+flux-system   deployment.apps/source-controller          1/1     1            1           18m
+kube-system   deployment.apps/cilium-operator            1/1     1            1           27m
+kube-system   deployment.apps/coredns                    2/2     2            2           27m
+queuing       deployment.apps/strimzi-cluster-operator   1/1     1            1           4m18s
+
+NAMESPACE     NAME                                                  DESIRED   CURRENT   READY   AGE
+appdev        replicaset.apps/appdev-kconsumer-58f6584bd7           1         1         1       72s
+appdev        replicaset.apps/appdev-kproducer-5bd4c686b            1         1         1       72s
+flux-system   replicaset.apps/helm-controller-55896d6ccf            1         1         1       18m
+flux-system   replicaset.apps/kustomize-controller-76795877c9       1         1         1       18m
+flux-system   replicaset.apps/notification-controller-7ccfbfbb98    1         1         1       18m
+flux-system   replicaset.apps/source-controller-6b8d9cb5cc          1         1         1       18m
+kube-system   replicaset.apps/cilium-operator-855c58cdcc            1         1         1       27m
+kube-system   replicaset.apps/coredns-85d9ccbb46                    2         2         2       27m
+queuing       replicaset.apps/strimzi-cluster-operator-745cdbb6fd   1         1         1       4m18s
+
+NAMESPACE   NAME                               READY   AGE
+queuing     statefulset.apps/kafka-kafka       1/1     22s
+queuing     statefulset.apps/kafka-zookeeper   3/3     66s
+
+```
+Now, if we forward the ports again, like when using the kind cluster, we get the same results.
+
+The producer
+![Producer](doc/img/doproducer.png)
+And the consumer
+![Consumer](doc/img/doconsumer.png)
 
