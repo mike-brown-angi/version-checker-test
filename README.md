@@ -64,7 +64,7 @@ flux version 0.24.0
 ```
 Now let's install and configure flux for our cluster.  The command to do that is "bootstrap".  The specific args to pass are:
 * owner -- this is your github user
-* repository -- this is the repository you want flux to use to keep track of things. If you've set the token privs right, it'll even create it for you if it doesn't already exist.
+* repository -- this is the repository you want flux to use to keep track of things. If you've set the token privs right, it'll even create it for you if it does not already exist.
 * branch -- This is the branch you want flux to use. I will use the default branch for the repo for this example.
 * path -- Path within the repo where flux will place its management directory structure. 
 * personal -- This tells flux that the repo owner is a GitHub user
@@ -248,9 +248,9 @@ Events:
   NAMESPACE     NAME      URL                          READY   STATUS                                                                               AGE
 flux-system   strimzi   https://strimzi.io/charts/   True    Fetched revision: fe5f69ab3ee9d0810754153212089610d7f136a2a77c00f0784fde74c38e8736   2m28s
 ```
-Now, it knows where to look. Let's give it something to look for.  I did the same thing we did with the repos directory for the releases directory.  Adding *./flux-system/releases-sync.yaml* and updating *./flux-system/kustomization.yaml*.
+Now, it knows where to look. Let's give it something to look for.  I did the same thing we did with the repos directory for the operators and releases directories.  Adding *./flux-system/operators-sync.yaml*,  *./flux-system/releases-sync.yaml*, and updating *./flux-system/kustomization.yaml*.
 
-The *./releases/strimzi-kafka-operator* directory holds the files that define making the namespace, the helm chart install, and the kustomization that keeps an eye on that helm chart definition.
+The *./operators/strimzi-kafka-operator* directory holds the files that define making the namespace, the helm chart install, and the kustomization that keeps an eye on that helm chart definition.
 
 After checking all of that in, flux deploys all that for us.
 ```shell
@@ -566,7 +566,9 @@ Then, browsing again to localhost:3000 and localhost:3001 will again work as it 
 Welp, at this point we've completed quite a bit here. We've created a local kubernetes cluster.  Set up GitOps so that it can simplify the services we deploy.  We've used helm charts to create a Kafka cluster and deploy both, a producer and consumer service to populate and read from that cluster.  Nice work!
 
 ## Part 8: Digital Ocean Deploy ##
-But, what if you wanted to do this in a Digital Ocean Kubernetes cluster?  Ha! You've already done all the work!  The Digital Ocean UX is terrific. Creating a cluster can be done in a handful of clicks.  Go through the prompts for a default kubernetes cluster.  Then, when the cluster is spun up, download the config file and set it up as the file named "config" in your ~/.kube file.  Let's test it out.
+But, what if you wanted to do this in a Digital Ocean Kubernetes cluster?  Ha! You've already done all the work! The scenario we're using here is that at this point you'd be done developing on your kind cluster and remove it with the *kind delete cluster* command. With that done, there would be no reason not to reuse our repo for the new cluster.  The Digital Ocean UX is terrific. Creating a cluster can be done in a handful of clicks.  Go through the prompts for a default kubernetes cluster.  Then, when the cluster is spun up, download the config file and set it up as the file named "config" in your ~/.kube file. You can find it here:
+![k8s Action Dropdown](doc/img/dok8sUx.png) 
+Once you have that in place, let's test it out. You can tell by the node names and k8s version (so recent, Swoon!) that this is the Digital Ocean one.
 
 ```shell
 ❯ k get nodes
@@ -575,7 +577,7 @@ pool-8mljiam7y-uadq5   Ready    <none>   4m27s   v1.21.5
 pool-8mljiam7y-uadqk   Ready    <none>   4m14s   v1.21.5
 pool-8mljiam7y-uadqs   Ready    <none>   4m39s   v1.21.5
 ```
-Then, if we use the same flux command we used originally, it spins 
+Then, if we use the same flux command we used originally, it syncs the Digital Ocean cluster with our GitHub repository.  It takes a few iterations of the syncing process to get everything going because of the dependencies.  If you're interested in making that happen quicker have a look at the *flux reconcile kustomization* command.
 ```shell
 ❯ flux bootstrap github \
   --owner=$GITHUB_USER \
