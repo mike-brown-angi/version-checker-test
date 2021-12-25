@@ -369,6 +369,7 @@ That will allow your producer or consumer to get at the kafka service, but there
 ❯ cat /etc/hosts
 127.0.0.1	localhost kafka-kafka-0.kafka-kafka-brokers.queuing.svc
 ```
+
 ## Part 6: Build the images ##
 Once the services are running outside the cluster, it is time to build the services into separate docker images that we can use to deploy.
 Have a look at ./src/Dockerfile. This file can be used to build the proper image by changing this line to copy the producer or consumer main files into the image.  Also, since the consumer is using port 3001 opposed to 3000, that port needs to be exposed as well.
@@ -387,7 +388,7 @@ Then doing a build that assigns a tag will set us up with two images to use.
 Sending build context to Docker daemon  24.58kB
 Step 1/14 : FROM golang:latest as builder
  ---> cbf5edf38f6b
-Step 2/14 : LABEL maintainer="Mike Brown <mdbdba@gmail.com>"
+Step 2/14 : LABEL maintainer="Mike ..."
  ---> Running in 0c21847edfca
 Removing intermediate container 0c21847edfca
  ---> 36fd3034cbb0
@@ -454,7 +455,7 @@ Then do the build again with a tag for the consumer
 Sending build context to Docker daemon  24.58kB
 Step 1/14 : FROM golang:latest as builder
  ---> cbf5edf38f6b
-Step 2/14 : LABEL maintainer="Mike Brown <mdbdba@gmail.com>"
+Step 2/14 : LABEL maintainer="Mike ..."
  ---> Using cache
  ---> 36fd3034cbb0
 Step 3/14 : WORKDIR /app
@@ -538,7 +539,30 @@ b91da662fc02: Layer already exists
 b2d5eeeaba3a: Layer already exists 
 v0.1: digest: sha256:a1ece941effdb804b41e43b812cb63751ac407add8093f7c82d108faef9f12b5 size: 949
 ```
-
+Nice.  At this point, we've packaged the services into easily deployable images.  If you've been following along with this, taking it step by step, congratulations!  You're in the home stretch.  
 ## Part 7: Deploying the Example Services ##
+The last step of this would be to come up with the pieces to deploy the services into our kubernetes cluster.  We've been using helm charts to deploy everything else, I'm going to continue that here.   To be able to do that, the charts should be pulled from a chart repository.  I've set one up in a GitHub repository by using [this tutorial](https://harness.io/blog/helm-chart-repo/) and put a simple Helm chart for each of the services in there.  If you're curious to have a look, it's location is listed in ./repos/mdbdba.yaml.
+
+The ./releases/producer and ./releases/consumer directories have the definition for the two services. Once flux deployed the services, they can be tested by forwarding each of their ports:
+```shell
+❯ k port-forward -n appdev svc/appdev-kproducer 3000:3000
+Forwarding from 127.0.0.1:3000 -> 3000
+Forwarding from [::1]:3000 -> 3000
+Handling connection for 3000
+Handling connection for 3000
+Handling connection for 3000
+...
+```
+```shell
+❯ k port-forward -n appdev svc/appdev-kconsumer 3001:3001
+Forwarding from 127.0.0.1:3001 -> 3001
+Forwarding from [::1]:3001 -> 3001
+Handling connection for 3001
+Handling connection for 3001
+...
+```
+Then, browsing again to localhost:3000 and localhost:3001 will again work as it did with our local testing.
+
+Welp, at this point we've completed quite a bit here. We've created a local kubernetes cluster.  Set up GitOps so that it can simplify the services we deploy.  We've used helm charts to create a Kafka cluster and deploy both, a producer and consumer service to populate and read from that cluster.  Nice work!
 
 
