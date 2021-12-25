@@ -566,7 +566,11 @@ Then, browsing again to localhost:3000 and localhost:3001 will again work as it 
 Welp, at this point we've completed quite a bit here. We've created a local kubernetes cluster.  Set up GitOps so that it can simplify the services we deploy.  We've used helm charts to create a Kafka cluster and deploy both, a producer and consumer service to populate and read from that cluster.  Nice work!
 
 ## Part 8: Digital Ocean Deploy ##
-But, what if you wanted to do this in a Digital Ocean Kubernetes cluster?  Ha! You've already done all the work! The scenario we're using here is that at this point you'd be done developing on your kind cluster and remove it with the *kind delete cluster* command. With that done, there would be no reason not to reuse our repo for the new cluster.  The Digital Ocean UX is terrific. Creating a cluster can be done in a handful of clicks.  Go through the prompts for a default kubernetes cluster.  Then, when the cluster is spun up, download the config file and set it up as the file named "config" in your ~/.kube file. You can find it here:
+But, what if you wanted to do this in a Digital Ocean Kubernetes cluster?  Ha! You've already done all the work! 
+
+The scenario we're using here is that at this point you'd be done developing on your kind cluster and remove it with the *kind delete cluster* command. With that done, there would be no reason not to reuse our repo for the new cluster.  
+
+The Digital Ocean UX is terrific. Creating a cluster can be done in a handful of clicks.  Go through the prompts for a default kubernetes cluster.  Then, when the cluster is spun up, download the config file and set it up as the file named "config" in your ~/.kube file. You can find it here:
 ![k8s Action Dropdown](doc/img/dok8sUx.png) 
 Once you have that in place, let's test it out. You can tell by the node names and k8s version (so recent, Swoon!) that this is the Digital Ocean one.
 
