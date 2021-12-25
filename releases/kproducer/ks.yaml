@@ -5,6 +5,8 @@ metadata:
   name: kproducer
   namespace: flux-system
 spec:
+  DependsOn:
+  - name: kafka-cluster
   interval: 10m0s
   path: ./releases/kproducer
   prune: true
