@@ -16,21 +16,24 @@ We will be developing locally to begin with.  I hope that by doing this first it
 * Then we'll demonstrate how easy it is to migrate our setup into a [Digital Ocean]( https://cloud.digitalocean.com) k8s cluster!
 
 There are a bunch of parts to this walk through. Here's an index if you want to jump to different parts:
-[Overview](https://github.com/mdbdba/DigitalOceanChallenge2021#part-1-overview) Summarizes the goal and what tools we're using (you are here!)
-[Kind Cluster and GitOps Setup](https://github.com/mdbdba/DigitalOceanChallenge2021#part-2-kind-cluster-and-gitops-setup) Goes through the creation of our local cluster and details out how to make flux live in it.
-[Add Kafka Using GitOps](https://github.com/mdbdba/DigitalOceanChallenge2021#part-3-add-kafka-using-gitops) The Strimzi cluster operator and the cluster itself are deployed in this part.
 
-[Testing Kafka](https://github.com/mdbdba/DigitalOceanChallenge2021#part-4-testing-kafka) With Kafka up and running, we kick the tires on it just a bit with a quick manual test.
+[1. Overview](https://github.com/mdbdba/DigitalOceanChallenge2021#part-1-overview) Summarizes the goal and what tools we're using (you are here!)
 
-[Kafka 50,000 Foot View](https://github.com/mdbdba/DigitalOceanChallenge2021#part-5-kafka-50000-foot-view) A few words about what Kafka is and the terminology we use with it.
+[2. Kind Cluster and GitOps Setup](https://github.com/mdbdba/DigitalOceanChallenge2021#part-2-kind-cluster-and-gitops-setup) Goes through the creation of our local cluster and details out how to make flux live in it.
 
-[Make the Producer and Consumer](https://github.com/mdbdba/DigitalOceanChallenge2021#part-6-make-the-producer-and-consumer)
+[3. Add Kafka Using GitOps](https://github.com/mdbdba/DigitalOceanChallenge2021#part-3-add-kafka-using-gitops) The Strimzi cluster operator and the cluster itself are deployed in this part.
 
-[Build the Images](https://github.com/mdbdba/DigitalOceanChallenge2021#part-7-build-the-images)
+[4. Testing Kafka](https://github.com/mdbdba/DigitalOceanChallenge2021#part-4-testing-kafka) With Kafka up and running, we kick the tires on it just a bit with a quick manual test.
 
-[Deploying the Example Services](https://github.com/mdbdba/DigitalOceanChallenge2021#part-8-deploying-the-example-services)
+[5. Kafka 50,000 Foot View](https://github.com/mdbdba/DigitalOceanChallenge2021#part-5-kafka-50000-foot-view) A few words about what Kafka is and the terminology we use with it.
 
-[Digital Ocean Deploy](https://github.com/mdbdba/DigitalOceanChallenge2021#part-9-digital-ocean-deploy)
+[6. Make the Producer and Consumer](https://github.com/mdbdba/DigitalOceanChallenge2021#part-6-make-the-producer-and-consumer)
+
+[7. Build the Images](https://github.com/mdbdba/DigitalOceanChallenge2021#part-7-build-the-images)
+
+[8. Deploying the Example Services](https://github.com/mdbdba/DigitalOceanChallenge2021#part-8-deploying-the-example-services)
+
+[9. Digital Ocean Deploy](https://github.com/mdbdba/DigitalOceanChallenge2021#part-9-digital-ocean-deploy)
 
 ## Part 2: Kind Cluster and GitOps Setup ##
 To start this challenge, we need a kubernetes cluster.  I always start out designing on a kind cluster, so let's do that.
