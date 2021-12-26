@@ -1,22 +1,37 @@
 # DigitalOceanChallenge2021
 ## Part 1: Overview ##
-Challenge objective: **Deploy a scalable message queue**
+This repository is the result of my attempt at the 2021 Digital Ocean Challenge objective.  Although it accomplishes the goal of deploying a scalable message queue, I hope it will spark interest in using gitops tools as part of a development workflow, as they aid in the portability of, if nothing else, the working examples we want to discuss.
 
-"A critical component of all the scalable architectures are message queues used to store and distribute messages to multiple parties and introduce buffering. Kafka is widely used in this space and there are multiple operators like Strimzi or to deploy it. For this project, use a sample app to demonstrate how your message queue works."
+Everything is more fun when there's a story attached to it, so here's ours for this project. It came about, as the result of sitting around the dinner table talking over absurd ideas with my wife, T, who came up with the root idea on the spot, and we just expanded it to suit the need.
 
-Everything is more fun when there's a story attached to it, so here's ours for this project:
-
-
-Our company, Conglombo Corp Limited, has a research team working on text to voice simulation.  They are currently testing the cadence and dexterity of their voices by having them perform various Epic Rap Battles of History. Researchers are watching the performances and rating them accordingly.  The ratings are being placed in a kafka topic. Our goal is to take topics off of the queue and do some simple analysis of the data from the topic.
+*Our company, Conglombo Corp Limited, has a research team working on text to voice simulation.  They are currently testing the cadence and dexterity of their voices by having them perform various Epic Rap Battles of History. Researchers are watching the performances and rating them accordingly.  The ratings are being placed in a kafka topic. Our goal is to take topics off of the queue and do some simple analysis of the data from the topic.*
 
 The demo will consist of a couple of web services. One will pretend to be the researchers, putting ratings onto a kafka topic. The other will pull ratings out of the topic and sum up the ratings for the performances of each of the voices.
-We will be developing locally and then deploying to Digital Ocean using:
+We will be developing locally to begin with.  I hope that by doing this first it'll help folks get over on any trepidation they may have doing cloud development. Once we have things working, we will deploy the whole design to Digital Ocean.  The tools referenced in this walk through:
 * [Docker](https://www.docker.com/) because all the pieces of this project will be containerized, and we are going to use a dockerhub account as a repository for the consumer and producer images.
-* A [kind cluster](https://kind.sigs.k8s.io/) for our kubernetes cluster
-* [Fluxcd](https://github.com/fluxcd/flux2) to make setting up and maintaining the services we put in k8s easier.
-* [Helm](https://helm.sh/) is a nice wrapper for describing deployments to k8s and easier for humans to read.
-* The [strimzi kafka operator helm chart](https://strimzi.io/documentation/) because it's an easy way for us to get a workable message queue in place.
-* Then we'll demonstrate how easy it is to migrate our setup into a [Digital Ocean]( https://cloud.digitalocean.com) kubernetes cluster!
+* A [kind cluster](https://kind.sigs.k8s.io/) will be used for our local kubernetes cluster
+* [Fluxcd](https://github.com/fluxcd/flux2) is used to make setting up and maintaining the services we put in k8s easier. It's also a great way to sum up a whole system, albeit a demo in this case, and move it around with a minimum of fuss.
+* [Helm](https://helm.sh/) is a nice wrapper for describing deployments to k8s and easier for humans to read. We're going to use it here to keep the yaml in the examples short and *hopefully* straight to the point.
+* The [strimzi kafka operator helm chart](https://strimzi.io/documentation/) is being used because it's an easy way for us to get a workable message queue in place for kubernetes. In a real world scenario, the business you'd be working with would probably already have one in place, so this is just filling that gap.
+* Then we'll demonstrate how easy it is to migrate our setup into a [Digital Ocean]( https://cloud.digitalocean.com) k8s cluster!
+
+There are a bunch of parts to this walk through. Here's an index if you want to jump to different parts:
+[Overview](https://github.com/mdbdba/DigitalOceanChallenge2021#part-1-overview) Summarizes the goal and what tools we're using (you are here!)
+[Kind Cluster and GitOps Setup](https://github.com/mdbdba/DigitalOceanChallenge2021#part-2-kind-cluster-and-gitops-setup) Goes through the creation of our local cluster and details out how to make flux live in it.
+[Add Kafka Using GitOps](https://github.com/mdbdba/DigitalOceanChallenge2021#part-3-add-kafka-using-gitops) The Strimzi cluster operator and the cluster itself are deployed in this part.
+
+[Testing Kafka](https://github.com/mdbdba/DigitalOceanChallenge2021#part-4-testing-kafka) With Kafka up and running, we kick the tires on it just a bit with a quick manual test.
+
+[Kafka 50,000 Foot View](https://github.com/mdbdba/DigitalOceanChallenge2021#part-5-kafka-50000-foot-view) A few words about what Kafka is and the terminology we use with it.
+
+[Make the Producer and Consumer](https://github.com/mdbdba/DigitalOceanChallenge2021#part-6-make-the-producer-and-consumer)
+
+[Build the Images](https://github.com/mdbdba/DigitalOceanChallenge2021#part-7-build-the-images)
+
+[Deploying the Example Services](https://github.com/mdbdba/DigitalOceanChallenge2021#part-8-deploying-the-example-services)
+
+[Digital Ocean Deploy](https://github.com/mdbdba/DigitalOceanChallenge2021#part-9-digital-ocean-deploy)
+
 ## Part 2: Kind Cluster and GitOps Setup ##
 To start this challenge, we need a kubernetes cluster.  I always start out designing on a kind cluster, so let's do that.
 ```shell
@@ -344,8 +359,17 @@ pod "kafka-consumer" deleted
 pod queuing/kafka-consumer terminated (Error)
 
 ```
+## Part 5: Kafka 50,000 Foot View ##
+[Apache's Kafka] (https://www.youtube.com/watch?v=06iRM1Ghr1k) implements a queuing system that allows us to stream and process events. In a microservice architecture, it allows services to communicate easily.
+**Events** are bits of data and state that represent a thing happening in the business. They are stored in Topics.
+**Topics** are an ordered set of events that are stored in a durable way for some definable amount of time.
+We call a process that adds events to a topic a **producer** and a process reading events from a topic is called a **consumer**.
+Since Kafka exposes these topics as an ordered stream the events have a lifespan, and that lifespan is longer than when they are read from a topic, the idea of a consumer having some kind of bookmark to know where they left off is called a Consumer Group.
+**Consumer Groups** are bookmarks in topics that allow replicas of services to stay coordinated as they retrieve events from the topic and how they'll know when new events are there to retrieve.
 
-## Part 5: Make the producer and consumer ##
+Now that we're up to speed with Kafka's terminology, we are set to develop our own producer and consumer for our ranking system.
+
+## Part 6: Make the producer and consumer ##
 Nice. Okay, so at this point we have all the infrastructure we need to write our own producer and consumer services in place, and we've kicked the tires on it a bit. 
 
 As mentioned in the summary, our company, Conglombo Corp Limited, has a research team working on text to voice simulation.  They are currently testing the cadence and dexterity of their voices by having them perform various Epic Rap Battles of History. Researchers are watching the performances and rating them accordingly.  The ratings are being placed in a kafka topic. Our goal is to take topics off of the queue and do some simple analysis of the data from the topic. 
@@ -370,7 +394,7 @@ That will allow your producer or consumer to get at the kafka service, but there
 127.0.0.1	localhost kafka-kafka-0.kafka-kafka-brokers.queuing.svc
 ```
 
-## Part 6: Build the images ##
+## Part 7: Build the images ##
 Once the services are running outside the cluster, it is time to build the services into separate docker images that we can use to deploy.
 Have a look at ./src/Dockerfile. This file can be used to build the proper image by changing this line to copy the producer or consumer main files into the image.  Also, since the consumer is using port 3001 opposed to 3000, that port needs to be exposed as well.
 ```shell
@@ -540,7 +564,8 @@ b2d5eeeaba3a: Layer already exists
 v0.1: digest: sha256:a1ece941effdb804b41e43b812cb63751ac407add8093f7c82d108faef9f12b5 size: 949
 ```
 Nice.  At this point, we've packaged the services into easily deployable images.  If you've been following along with this, taking it step by step, congratulations!  You're in the home stretch.  
-## Part 7: Deploying the Example Services ##
+
+## Part 8: Deploying the Example Services ##
 The last step of this would be to come up with the pieces to deploy the services into our kubernetes cluster.  We've been using helm charts to deploy everything else, I'm going to continue that here.   To be able to do that, the charts should be pulled from a chart repository.  I've set one up in a GitHub repository by using [this tutorial](https://harness.io/blog/helm-chart-repo/) and put a simple Helm chart for each of the services in there.  If you're curious to have a look, it's location is listed in ./repos/mdbdba.yaml.
 
 The ./releases/producer and ./releases/consumer directories have the definition for the two services. Once flux deployed the services, they can be tested by forwarding each of their ports:
@@ -565,7 +590,7 @@ Then, browsing again to localhost:3000 and localhost:3001 will again work as it 
 
 Welp, at this point we've completed quite a bit here. We've created a local kubernetes cluster.  Set up GitOps so that it can simplify the services we deploy.  We've used helm charts to create a Kafka cluster and deploy both, a producer and consumer service to populate and read from that cluster.  Nice work!
 
-## Part 8: Digital Ocean Deploy ##
+## Part 9: Digital Ocean Deploy ##
 But, what if you wanted to do this in a Digital Ocean Kubernetes cluster?  Ha! You've already done all the work! 
 
 The scenario we're using here is that at this point you'd be done developing on your kind cluster and remove it with the *kind delete cluster* command. With that done, there would be no reason not to reuse our repo for the new cluster.  
