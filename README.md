@@ -364,10 +364,15 @@ pod queuing/kafka-consumer terminated (Error)
 ```
 ## Part 5: Kafka 50,000 Foot View ##
 [Apache's Kafka](https://www.youtube.com/watch?v=06iRM1Ghr1k) implements a queuing system that allows us to stream and process events. In a microservice architecture, it allows services to communicate easily.
+
 **Events** are bits of data and state that represent a thing happening in the business. They are stored in Topics.
+
 **Topics** are an ordered set of events that are stored in a durable way for some definable amount of time.
+
 We call a process that adds events to a topic a **producer** and a process reading events from a topic is called a **consumer**.
+
 Since Kafka exposes these topics as an ordered stream the events have a lifespan, and that lifespan is longer than when they are read from a topic, the idea of a consumer having some kind of bookmark to know where they left off is called a Consumer Group.
+
 **Consumer Groups** are bookmarks in topics that allow replicas of services to stay coordinated as they retrieve events from the topic. They'll also know when new events are there to retrieve.
 
 Now that we're up to speed with Kafka's terminology, we are set to develop our own producer and consumer for our ranking system.
