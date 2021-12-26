@@ -23,17 +23,17 @@ There are a bunch of parts to this walk through. Here's an index if you want to 
 
 [3. Add Kafka Using GitOps](https://github.com/mdbdba/DigitalOceanChallenge2021#part-3-add-kafka-using-gitops) The Strimzi cluster operator and the cluster itself are deployed in this part.
 
-[4. Testing Kafka](https://github.com/mdbdba/DigitalOceanChallenge2021#part-4-testing-kafka) With Kafka up and running, we kick the tires on it just a bit with a quick manual test.
+[4. Testing Kafka](https://github.com/mdbdba/DigitalOceanChallenge2021#part-4-testing-kafka) With Kafka up and running, we kick the tires on it with a quick manual test.
 
 [5. Kafka 50,000 Foot View](https://github.com/mdbdba/DigitalOceanChallenge2021#part-5-kafka-50000-foot-view) A few words about what Kafka is and the terminology we use with it.
 
-[6. Make the Producer and Consumer](https://github.com/mdbdba/DigitalOceanChallenge2021#part-6-make-the-producer-and-consumer)
+[6. Make the Producer and Consumer](https://github.com/mdbdba/DigitalOceanChallenge2021#part-6-make-the-producer-and-consumer) Our example services that populate and pull from the Kafka topic
 
-[7. Build the Images](https://github.com/mdbdba/DigitalOceanChallenge2021#part-7-build-the-images)
+[7. Build the Images](https://github.com/mdbdba/DigitalOceanChallenge2021#part-7-build-the-images) With our code working, we take our code and builds our services into deployable images.
 
-[8. Deploying the Example Services](https://github.com/mdbdba/DigitalOceanChallenge2021#part-8-deploying-the-example-services)
+[8. Deploying the Example Services](https://github.com/mdbdba/DigitalOceanChallenge2021#part-8-deploying-the-example-services) Yeah, but how do those images make their way into our cluster?  This step explains how that works.
 
-[9. Digital Ocean Deploy](https://github.com/mdbdba/DigitalOceanChallenge2021#part-9-digital-ocean-deploy)
+[9. Digital Ocean Deploy](https://github.com/mdbdba/DigitalOceanChallenge2021#part-9-digital-ocean-deploy) Now, with all the hard work done, we demonstrate how easy it is to move this work into a Digital Ocean k8s cluster.
 
 ## Part 2: Kind Cluster and GitOps Setup ##
 To start this challenge, we need a kubernetes cluster.  I always start out designing on a kind cluster, so let's do that.
