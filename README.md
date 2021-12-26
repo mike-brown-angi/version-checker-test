@@ -4,16 +4,16 @@ This repository is the result of my attempt at the 2021 Digital Ocean Challenge 
 
 Everything is more fun when there's a story attached to it, so here's ours for this project. It came about, as the result of sitting around the dinner table talking over absurd ideas with my wife, T, who came up with the root idea on the spot, and we just expanded it to suit the need.
 
-*Our company, Conglombo Corp Limited, has a research team working on text to voice simulation.  They are currently testing the cadence and dexterity of their voices by having them perform various Epic Rap Battles of History. Researchers are watching the performances and rating them accordingly.  The ratings are being placed in a kafka topic. Our goal is to take topics off of the queue and do some simple analysis of the data from the topic.*
+*Our company, Conglombo Corp Limited, has a research team working on text to voice simulation.  They are currently testing the cadence and dexterity of their voices by having them perform various Epic Rap Battles of History. Researchers are watching the performances and rating them accordingly.  The ratings are being placed in a Kafka topic. Our goal is to take topics off of the queue and do some simple analysis of the data from the topic.*
 
-The demo will consist of a couple of web services. One will pretend to be the researchers, putting ratings onto a kafka topic. The other will pull ratings out of the topic and sum up the ratings for the performances of each of the voices.
-We will be developing locally to begin with.  I hope that by doing this first it'll help folks get over on any trepidation they may have doing cloud development. Once we have things working, we will deploy the whole design to Digital Ocean.  The tools referenced in this walk through:
-* [Docker](https://www.docker.com/) because all the pieces of this project will be containerized, and we are going to use a dockerhub account as a repository for the consumer and producer images.
-* A [kind cluster](https://kind.sigs.k8s.io/) will be used for our local kubernetes cluster
+The demo will consist of a couple of web services. One will pretend to be the researchers, putting ratings onto a Kafka topic. The other will pull ratings out of the topic and them sum up rating values of each of the voices.
+We will develop locally to start.  I hope that by doing this first it'll help folks get over on any trepidation they may have doing cloud development. Once we have things working, we will deploy the whole design to Digital Ocean.  The tools referenced in this walk through:
+* [Docker](https://www.docker.com/) all the pieces of this project will be containerized, and we will use a dockerhub account as a repository for the consumer and producer images.
+* A [kind cluster](https://kind.sigs.k8s.io/) will be used for our local Kubernetes cluster
 * [Fluxcd](https://github.com/fluxcd/flux2) is used to make setting up and maintaining the services we put in k8s easier. It's also a great way to sum up a whole system, albeit a demo in this case, and move it around with a minimum of fuss.
-* [Helm](https://helm.sh/) is a nice wrapper for describing deployments to k8s and easier for humans to read. We're going to use it here to keep the yaml in the examples short and *hopefully* straight to the point.
-* The [strimzi kafka operator helm chart](https://strimzi.io/documentation/) is being used because it's an easy way for us to get a workable message queue in place for kubernetes. In a real world scenario, the business you'd be working with would probably already have one in place, so this is just filling that gap.
-* Then we'll demonstrate how easy it is to migrate our setup into a [Digital Ocean]( https://cloud.digitalocean.com) k8s cluster!
+* [Helm](https://helm.sh/) is a nice wrapper for describing deployments to k8s and easier for humans to read. We're using it here to keep the yaml in the examples short and *hopefully* straight to the point.
+* The [Strimzi Kafka Operator Helm Chart](https://strimzi.io/documentation/) is used because it's an easy way for us to get a workable message queue in place for Kubernetes. In a real world scenario, the business you'd be working with would probably already have one in place, so this is just filling that gap.
+* Finally, we'll demonstrate how easy it is to migrate our setup into a [Digital Ocean]( https://cloud.digitalocean.com) k8s cluster!
 
 There are a bunch of parts to this walk through. Here's an index if you want to jump to different parts:
 
@@ -36,7 +36,7 @@ There are a bunch of parts to this walk through. Here's an index if you want to 
 [9. Digital Ocean Deploy](https://github.com/mdbdba/DigitalOceanChallenge2021#part-9-digital-ocean-deploy) Now, with all the hard work done, we demonstrate how easy it is to move this work into a Digital Ocean k8s cluster.
 
 ## Part 2: Kind Cluster and GitOps Setup ##
-To start this challenge, we need a kubernetes cluster.  I always start out designing on a kind cluster, so let's do that.
+To start this challenge we need a Kubernetes cluster.  I always start out designing on a kind cluster, so let's do that.
 ```shell
 ❯ kind create cluster --config=./cluster.yaml
 Creating cluster "kind" ...
@@ -62,14 +62,14 @@ kind-worker3         Ready    <none>                 15m   v1.21.1
 
 
 ```
-With a cluster up and running, having something that will coordinate all the deployments and charts we'll want for this would be helpful.  Let's use flux for that.
+With a cluster up and running, we'll need something that will coordinate all the deployments and charts we want.  Let's use flux for that.
 
 Flux, https://fluxcd.io/, has a bunch of functionality that you can explore.  We're just going to use it here to keep the resource management sane in this example. 
 
 The requirements for flux are pretty straight forward.  You need:
-* a github or gitlab repo of your own (it will use the repo to keep track of the config). I'm using the repo where this README lives as mine. You could fork this one if you like, or just point at an empty one you create. Either would work.
-* a kubernetes cluster (like the one we just spun up), 
-* and install/set up the cli. See the "Getting Started" doc, https://fluxcd.io/docs/get-started/, for how to do that. Make sure you define the environment variables that identify your github/gitlab user and token as explained in that doc. 
+* a github or gitlab repo of your own (it will use the repo to keep track of the config). I'm using the repo where this README lives as mine. You could fork this one if you like, or just point at an empty one you create. Either works.
+* a Kubernetes cluster (like the one we just spun up), 
+* and install/set up the cli. See the "Getting Started" doc, https://fluxcd.io/docs/get-started/, for how to do that. Make sure you define the environment variables that identify your GitHub/gitlab user and token, as explained in that doc. 
 
 Just to be sure, verify that flux is installed and feels good about the cluster.
 ```shell
@@ -153,11 +153,11 @@ ops
 These files will govern how we add/maintain the functionality we add to the cluster with a minimum of fuss. 
 
 ## Part 3: Add Kafka using GitOps ##
-With flux all set up, let's give it something to do.  We set out on this challenge to get an example app that touches kafka.  Getting Kafka installed seems like a good place to start.
+With flux all set up, let's give it something to do.  We set out on this challenge to get an example app that touches Kafka.  Getting Kafka installed seems like a wise place to start.
 
-Getting Kafka set up at a high level will be a two-step process.  The first step is that we're going to set up an operator to handle the complicated bits around setting up Kafka. Then, for step two, we are going to convince the operator to create a Kafka instance for us. For each of the steps, We're going to be using helm charts.
+Getting Kafka set up at a high level is a two-step process.  The first step is that we're going to set up an operator to handle the complicated bits around setting up Kafka. For step two, we are going to convince the operator to create a Kafka instance for us. For each step, we will use helm charts.
 
-Making things even easier, Flux is going to handle those pieces for us. For that to happen, we need to tell flux about where the helm charts (and any others we might need) live.  Let's create a kustomization in the flux-system directory telling flux to look for helm repositories.
+Making things even easier, Flux will handle those pieces for us. First we need to tell flux where the helm charts (and any others we might need) live.  Let's create a kustomization in the flux-system directory telling flux to look for helm repositories.
 
 *flux-system/repo-sync.yaml*
 ```yaml
@@ -185,7 +185,7 @@ resources:
 - repos-sync.yaml
 ```
 
-And, let's give it a definition to look at. The following describes in yaml where to look for the Strimzi helm charts.
+And let's give it a definition to look at. The following describes in yaml where to look for the Strimzi helm charts.
 
 *./repos/strimzi.yaml*
 ```yaml
@@ -199,7 +199,7 @@ spec:
 interval: 10m0s
 url: https://strimzi.io/charts/
 ```
-Once that is all checked into source control.  You'll see the new kustomization for "repos" got created. Do that by describing the k8s kustomizations.
+Once that is all checked into source control, you'll see the new kustomization for "repos" got created. Do that by describing the k8s kustomizations.
 ```shell
 ❯ k get ks -n flux-system
   NAME          READY   STATUS                                                                   AGE
@@ -266,11 +266,11 @@ Events:
   NAMESPACE     NAME      URL                          READY   STATUS                                                                               AGE
 flux-system   strimzi   https://strimzi.io/charts/   True    Fetched revision: fe5f69ab3ee9d0810754153212089610d7f136a2a77c00f0784fde74c38e8736   2m28s
 ```
-Now, it knows where to look. Let's give it something to look for.  I did the same thing we did with the repos directory for the operators and releases directories.  Adding *./flux-system/operators-sync.yaml*,  *./flux-system/releases-sync.yaml*, and updating *./flux-system/kustomization.yaml*.
+Now it knows where to look. Let's give it something to look for.  I did the same thing we did with the repos directory for the operators and releases directories.  Adding *./flux-system/operators-sync.yaml*,  *./flux-system/releases-sync.yaml*, and updating *./flux-system/kustomization.yaml*.
 
 The *./operators/strimzi-kafka-operator* directory holds the files that define making the namespace, the helm chart install, and the kustomization that keeps an eye on that helm chart definition.
 
-After checking all of that in, flux deploys all that for us.
+After checking all of that in, flux deploys it all for us.
 ```shell
 ❯ kgea
 NAMESPACE     LAST SEEN   TYPE     REASON   OBJECT                                 MESSAGE
@@ -305,8 +305,8 @@ NAME                                                 DESIRED   CURRENT   READY  
 replicaset.apps/strimzi-cluster-operator-76f95f787   1         1         1       19m
 
 ```
-So, with the kafka operator all set up, we just need to tell it what we want it to do.  For this example I just slightly changed (as in, changed the cluster name and namespace) the single node ephemeral example used by the official release, https://github.com/strimzi/strimzi-kafka-operator/blob/main/examples/kafka/kafka-ephemeral-single.yaml . We wouldn't want to use something like this for a prod environment, but for developing our sample app this will do just fine.
-In the ./releases/kafka-cluster directory I created a kustomization that takes the definition for that kafka cluster and applies it. The setup is about the same generally as the kafka-operator. Points to note here though, for kafka-cluster we're not using a helm deploy (see kafka.yaml) and we have this kustomization (ks.yaml) being dependent on the operator.  After adding the kafka-cluster/* files and getting the repo updated, flux reconciles things and we soon have a kafka instance to play with.
+So with the Kafka operator all set up, we just need to tell it what we want it to do.  For this example I just changed the cluster name and namespace in the single node ephemeral example used by the official release, https://github.com/strimzi/strimzi-kafka-operator/blob/main/examples/kafka/kafka-ephemeral-single.yaml . We wouldn't use something like this for a prod environment, but for developing our sample app this will do just fine.
+In the ./releases/kafka-cluster directory I created a kustomization that takes the definition for that Kafka cluster and applies it. The setup is about the same generally as the kafka-operator. Points to note here though, for kafka-cluster we're not using a helm deploy (see kafka.yaml) and we have this kustomization (ks.yaml) being dependent on the operator.  After adding the kafka-cluster/* files and getting the repo updated, flux reconciles things and we soon have a Kafka instance to play with.
 ```shell
 ❯ kga -n queuing
 NAME                                           READY   STATUS    RESTARTS   AGE
@@ -337,7 +337,7 @@ statefulset.apps/kafka-zookeeper   3/3     31m
 
 ```
 ## Part 4: Testing Kafka ##
-Yay!  Let's test it out quick for a smoke test.  We'll spin up a producer pod to put some messages out there, then create a consumer. With some luck there will be no surprises.
+Yay!  Let's run a quick smoke test.  We'll spin up a producer pod to put some messages out there, then create a consumer. With some luck there will be no surprises.
 ```shell
 ❯ kubectl -n queuing run kafka-producer -ti --image=quay.io/strimzi/kafka:0.26.0-kafka-3.0.0 --rm=true --restart=Never -- bin/kafka-console-producer.sh --broker-list kafka-kafka-bootstrap:9092 --topic manual-add-topic
 If you don't see a command prompt, try pressing enter.
@@ -368,32 +368,35 @@ pod queuing/kafka-consumer terminated (Error)
 **Topics** are an ordered set of events that are stored in a durable way for some definable amount of time.
 We call a process that adds events to a topic a **producer** and a process reading events from a topic is called a **consumer**.
 Since Kafka exposes these topics as an ordered stream the events have a lifespan, and that lifespan is longer than when they are read from a topic, the idea of a consumer having some kind of bookmark to know where they left off is called a Consumer Group.
-**Consumer Groups** are bookmarks in topics that allow replicas of services to stay coordinated as they retrieve events from the topic and how they'll know when new events are there to retrieve.
+**Consumer Groups** are bookmarks in topics that allow replicas of services to stay coordinated as they retrieve events from the topic. They'll also know when new events are there to retrieve.
 
 Now that we're up to speed with Kafka's terminology, we are set to develop our own producer and consumer for our ranking system.
 
 ## Part 6: Make the producer and consumer ##
 Nice. Okay, so at this point we have all the infrastructure we need to write our own producer and consumer services in place, and we've kicked the tires on it a bit. 
 
-As mentioned in the summary, our company, Conglombo Corp Limited, has a research team working on text to voice simulation.  They are currently testing the cadence and dexterity of their voices by having them perform various Epic Rap Battles of History. Researchers are watching the performances and rating them accordingly.  The ratings are being placed in a kafka topic. Our goal is to take topics off of the queue and do some simple analysis of the data from the topic. 
+As mentioned in the summary, our company, Conglombo Corp Limited, has a research team working on text to voice simulation.  They are currently testing the cadence and dexterity of their voices by having them perform various Epic Rap Battles of History. Researchers are watching the performances and rating them accordingly.  The ratings are being placed in a Kafka topic. Our goal is to take topics off of the queue and do some simple analysis of the data from the topic. 
 
-Now, have a look in the src subdirectory.  In ./src/producer is a web service that simulates the researchers making ratings.  It is really just a simple web service exposing health and home endpoints.  The home endpoint basically wraps a function, named *produce*, that iterates over a slice of ratings and writes each to a kafka topic.
+Now have a look in the src subdirectory.  In ./src/producer is a web service that simulates the researchers making ratings.  It is really just a simple web service exposing health and home endpoints.  The home endpoint basically wraps a function, named *produce*, that iterates over a slice of ratings and writes each to a Kafka topic.
 
-Each time we hit the home endpoint (or refresh the page), it generates a number of ratings and presents the current ones in html. The ratings are also placed in kafka and await the consumer.   
+Each time we hit the home endpoint (or refresh the page), it generates a number of ratings and presents the current ones in html. The ratings are also placed in Kafka and await the consumer.   
 
-The consumer in ./src/consumer works the same way.  A function, named *consume*, is fired when the home endpoint is hit and uses a kafka reader with a consumer group to pull ratings off the topic one by one. It then crunches them up and shows the total rating values for the simulated voices.   
+The consumer in ./src/consumer works the same way.  A function, named *consume*, is fired when the home endpoint is hit and uses a Kafka reader with a consumer group to pull ratings off the topic one by one. It then crunches them up and shows the total rating values for the simulated voices.   
 
-The game to be played there is to refresh the producer service, and once it's done refreshing (~10 seconds or so on my machine), do the same for the consumer service, and notice that the rating values increase (this seems to run a bit slower). The producer will look like this:
+The game to be played there is to refresh the producer service and, once it's done refreshing (~10 seconds or so on my machine), do the same for the consumer service, and notice that the rating values increase (this seems to run a bit slower). The producer will look like this:
 ![Producer](doc/img/producer.png)
-And, the consumer will look something like this:
+The consumer will look something like this:
 ![Consumer](doc/img/consumer.png)
+
 As you can see in my ratings data, Joan of Arc has the highest sum of ratings.  Hope your favorite voice is at the top of your list!
 
-A couple of notes if you were to try running the code locally.  To interact with kafka running in a cluster you'll need to make a way to get at it.  Do that by forwarding a port from the kafka bootstrap to localhost like this
+A couple of notes if you were to try running the code locally:  
+
+To interact with Kafka running in a cluster you'll need to make a way to get at it.  Do that by forwarding a port from the Kafka bootstrap to localhost like this.
 ```shell
 ❯ k port-forward -n queuing service/kafka-kafka-bootstrap 9092:9092
 ```
-That will allow your producer or consumer to get at the kafka service, but there's one more step.  When a client talks with kafka it reports back the pod information to connect to and expects that be used going forward.  Which, when you're outside the cluster presents a problem.  I got over that by adding the address the client complained about to my /etc/hosts file.  Like this:
+That will allow your producer or consumer to get at the Kafka service, but there's one more step.  When a client talks with Kafka it reports back the pod information to connect to and expects that will be used going forward.  Which, when you're outside the cluster, presents a problem.  I got over that by adding the address the client complained about to my /etc/hosts file.  Like this:
 ```shell
 ❯ cat /etc/hosts
 127.0.0.1	localhost kafka-kafka-0.kafka-kafka-brokers.queuing.svc
@@ -571,7 +574,7 @@ v0.1: digest: sha256:a1ece941effdb804b41e43b812cb63751ac407add8093f7c82d108faef9
 Nice.  At this point, we've packaged the services into easily deployable images.  If you've been following along with this, taking it step by step, congratulations!  You're in the home stretch.  
 
 ## Part 8: Deploying the Example Services ##
-The last step of this would be to come up with the pieces to deploy the services into our kubernetes cluster.  We've been using helm charts to deploy everything else, I'm going to continue that here.   To be able to do that, the charts should be pulled from a chart repository.  I've set one up in a GitHub repository by using [this tutorial](https://harness.io/blog/helm-chart-repo/) and put a simple Helm chart for each of the services in there.  If you're curious to have a look, it's location is listed in ./repos/mdbdba.yaml.
+The last step of this is to come up with the pieces to deploy the services into our Kubernetes cluster.  We've been using helm charts to deploy everything else; I'm going to continue that here.   To be able to do that, the charts should be pulled from a chart repository.  I've set one up in a GitHub repository by using [this tutorial](https://harness.io/blog/helm-chart-repo/) and put a simple Helm chart for each of the services in there.  If you're curious to have a look, it's location is listed in ./repos/mdbdba.yaml.
 
 The ./releases/producer and ./releases/consumer directories have the definition for the two services. Once flux deployed the services, they can be tested by forwarding each of their ports:
 ```shell
@@ -591,16 +594,21 @@ Handling connection for 3001
 Handling connection for 3001
 ...
 ```
-Then, browsing again to localhost:3000 and localhost:3001 will again work as it did with our local testing.
+Then, browsing again to localhost:3000 and localhost:3001 will work as it did with our local testing.
 
-Welp, at this point we've completed quite a bit here. We've created a local kubernetes cluster.  Set up GitOps so that it can simplify the services we deploy.  We've used helm charts to create a Kafka cluster and deploy both, a producer and consumer service to populate and read from that cluster.  Nice work!
+Welp, at this point we've completed quite a bit here. * We've created a local Kubernetes cluster.  
+  * Set up GitOps so that it can simplify the services we deploy.  
+  * We've used helm charts to create a Kafka cluster and 
+  * deploy both, a producer and consumer service to populate and read from that cluster.  
+
+Nice work!
 
 ## Part 9: Digital Ocean Deploy ##
-But, what if you wanted to do this in a Digital Ocean Kubernetes cluster?  Ha! You've already done all the work! 
+But what if you wanted to do this in a Digital Ocean Kubernetes cluster?  Ha! You've already done all the work! 
 
 The scenario we're using here is that at this point you'd be done developing on your kind cluster and remove it with the *kind delete cluster* command. With that done, there would be no reason not to reuse our repo for the new cluster.  
 
-The Digital Ocean UX is terrific. Creating a cluster can be done in a handful of clicks.  Go through the prompts for a default kubernetes cluster.  Then, when the cluster is spun up, download the config file and set it up as the file named "config" in your ~/.kube file. You can find it here:
+The Digital Ocean UX is terrific. Creating a cluster can be done in a handful of clicks.  Go through the prompts for a default Kubernetes cluster.  Then, when the cluster is spun up, download the config file and set it up as the file named "config" in your ~/.kube file. You can find it here:
 ![k8s Action Dropdown](doc/img/dok8sUx.png) 
 Once you have that in place, let's test it out. You can tell by the node names and k8s version (so recent, Swoon!) that this is the Digital Ocean one.
 
@@ -611,7 +619,7 @@ pool-8mljiam7y-uadq5   Ready    <none>   4m27s   v1.21.5
 pool-8mljiam7y-uadqk   Ready    <none>   4m14s   v1.21.5
 pool-8mljiam7y-uadqs   Ready    <none>   4m39s   v1.21.5
 ```
-Then, if we use the same flux command we used originally, it syncs the Digital Ocean cluster with our GitHub repository.  It takes a few iterations of the syncing process to get everything going because of the dependencies.  If you're interested in making that happen quicker have a look at the *flux reconcile kustomization* command.
+If we use the same flux command we used originally, it syncs the Digital Ocean cluster with our GitHub repository.  It takes a few iterations of the syncing process to get everything going because of the dependencies.  If you're interested in making that happen quicker have a look at the *flux reconcile kustomization* command.
 ```shell
 ❯ flux bootstrap github \
   --owner=$GITHUB_USER \
@@ -723,16 +731,16 @@ queuing     statefulset.apps/kafka-kafka       1/1     22s
 queuing     statefulset.apps/kafka-zookeeper   3/3     66s
 
 ```
-Now, if we forward the ports again, like when using the kind cluster, we get the same results.
+If we forward the ports again, like when using the kind cluster, we get the same results.
 
 The producer
 ![Producer](doc/img/doproducer.png)
 And the consumer
 ![Consumer](doc/img/doconsumer.png)
 
-Remember, when finishing up with the kubernetes cluster, clean up the paid resource you've used. Like with what seems like everything else associated with Digital Ocean, the way to delete the cluster is clear and straight forward. Check it out.
+Remember, when finishing up with the Kubernetes cluster, clean up the paid resource you've used. As with what seems like everything else associated with Digital Ocean, the way to delete the cluster is clear and straight forward. Check it out.
 ![k8s Actions](doc/img/dok8sUx.png)
 
 Click that Destroy button, enter the cluster name (don't worry, it shows you it's name to copy), press enter, and it's as good as gone.
 
-Now, we really have covered a bunch of ground!  Thanks for giving this a read.  
+Now we really have covered a bunch of ground!  Thanks for giving this a read.  
