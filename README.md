@@ -1,6 +1,6 @@
 # DigitalOceanChallenge2021
 ## Part 1: Overview ##
-This repository is the result of my attempt at the 2021 Digital Ocean Challenge objective.  Although it accomplishes the goal of deploying a scalable message queue, I hope it will spark interest in using gitops tools as part of a development workflow, as they aid in the portability of, if nothing else, the working examples we want to discuss.
+This repository is the result of my attempt at the 2021 Digital Ocean Challenge objective.  Although it accomplishes the goal of deploying a scalable message queue, I hope it will spark interest in using GitOps tools as part of a development workflow, as they aid in the portability of, if nothing else, the working examples we want to discuss.
 
 Everything is more fun when there's a story attached to it, so here's ours for this project. It came about, as the result of sitting around the dinner table talking over absurd ideas with my wife, T, who came up with the root idea on the spot, and we just expanded it to suit the need.
 
