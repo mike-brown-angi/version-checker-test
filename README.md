@@ -200,7 +200,7 @@ interval: 10m0s
 url: https://strimzi.io/charts/
 ```
 Once that is all checked into source control.  You'll see the new kustomization for "repos" got created. Do that by describing the k8s kustomizations.
-```yaml
+```shell
 ❯ k get ks -n flux-system
   NAME          READY   STATUS                                                                   AGE
 flux-system   True    Applied revision: development/e2531334fc795e3ede86817993838706bd100ece   3d20h
@@ -377,11 +377,13 @@ Nice. Okay, so at this point we have all the infrastructure we need to write our
 
 As mentioned in the summary, our company, Conglombo Corp Limited, has a research team working on text to voice simulation.  They are currently testing the cadence and dexterity of their voices by having them perform various Epic Rap Battles of History. Researchers are watching the performances and rating them accordingly.  The ratings are being placed in a kafka topic. Our goal is to take topics off of the queue and do some simple analysis of the data from the topic. 
 
-Now, have a look in the src subdirectory.  In ./src/producer is a web service that simulates the researchers making ratings.  Hit the endpoint (or refresh the page) and it generates a number of ratings. The ratings are placed in kafka and await the consumer.   
+Now, have a look in the src subdirectory.  In ./src/producer is a web service that simulates the researchers making ratings.  It is really just a simple web service exposing health and home endpoints.  The home endpoint basically wraps a function, named *produce*, that iterates over a slice of ratings and writes each to a kafka topic.
 
-The consumer in ./src/consumer pulls a number of ratings off the topic, crunches them up and shows the total rating values for the simulated voices.   
+Each time we hit the home endpoint (or refresh the page), it generates a number of ratings and presents the current ones in html. The ratings are also placed in kafka and await the consumer.   
 
-The game to be played there is to refresh the producer service, and once it's done refreshing, do the same for the consumer service, and notice that the rating values increase. The producer will look like this:
+The consumer in ./src/consumer works the same way.  A function, named *consume*, is fired when the home endpoint is hit and uses a kafka reader with a consumer group to pull ratings off the topic one by one. It then crunches them up and shows the total rating values for the simulated voices.   
+
+The game to be played there is to refresh the producer service, and once it's done refreshing (~10 seconds or so on my machine), do the same for the consumer service, and notice that the rating values increase (this seems to run a bit slower). The producer will look like this:
 ![Producer](doc/img/producer.png)
 And, the consumer will look something like this:
 ![Consumer](doc/img/consumer.png)
