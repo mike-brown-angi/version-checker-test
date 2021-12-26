@@ -363,7 +363,7 @@ pod queuing/kafka-consumer terminated (Error)
 
 ```
 ## Part 5: Kafka 50,000 Foot View ##
-[Apache's Kafka] (https://www.youtube.com/watch?v=06iRM1Ghr1k) implements a queuing system that allows us to stream and process events. In a microservice architecture, it allows services to communicate easily.
+[Apache's Kafka](https://www.youtube.com/watch?v=06iRM1Ghr1k) implements a queuing system that allows us to stream and process events. In a microservice architecture, it allows services to communicate easily.
 **Events** are bits of data and state that represent a thing happening in the business. They are stored in Topics.
 **Topics** are an ordered set of events that are stored in a durable way for some definable amount of time.
 We call a process that adds events to a topic a **producer** and a process reading events from a topic is called a **consumer**.
