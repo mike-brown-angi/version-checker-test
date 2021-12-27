@@ -13,6 +13,6 @@ spec:
         kind: HelmRepository
         name: mdbdba
   interval: 10m0s
-values:
-  podAnnotations:
+  values:
+    podAnnotations:
       enable.version-checker.io/kproducer: true
