@@ -15,4 +15,4 @@ spec:
   interval: 10m0s
   values:
     podAnnotations:
-      enable.version-checker.io/kproducer: true
+      enable.version-checker.io/kproducer: "true"
